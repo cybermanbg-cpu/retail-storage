@@ -5,36 +5,35 @@
 
             <div class="mb-4">
                 <p class="text-sm text-gray-600 mb-2">Обща сума за плащане:</p>
-                <p id="modalTotalAmount" class="text-2xl font-bold text-primary-600">0.00 €</p>
+                <p id="modalTotalAmount" class="text-2xl font-bold text-primary-600">0.00 лв.</p>
             </div>
 
             <div class="space-y-3">
-                <!-- Плащане с карта -->
                 <button onclick="handleCardPayment()" 
                         class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition">
                     <i class="fas fa-credit-card mr-2"></i> Плащане с карта
                 </button>
 
-                <!-- Плащане в брой -->
                 <button onclick="handleCashPayment()" 
                         class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold transition">
                     <i class="fas fa-money-bill mr-2"></i> Плащане в брой
                 </button>
 
-                <!-- Връщане към количката -->
                 <button onclick="handleCloseModal()" 
                         class="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 py-3 rounded-lg font-semibold transition">
                     <i class="fas fa-arrow-left mr-2"></i> Върни се към количката
                 </button>
             </div>
 
-            <!-- Секция за плащане в брой -->
             <div id="cashPaymentSection" class="hidden mt-4 pt-4 border-t">
                 <label class="block text-sm font-medium mb-2">Въведете получена сума:</label>
-                <input type="number" id="cashAmount" step="0.01" class="w-full px-3 py-2 border rounded-lg mb-3" placeholder="0.00">
+                <input type="number" id="cashAmount" step="0.01" 
+                       class="w-full px-3 py-2 border rounded-lg mb-3" 
+                       placeholder="0.00"
+                       onkeypress="handleCashAmountKeyPress(event)">
                 <div id="changeInfo" class="hidden mb-3 p-2 bg-green-100 rounded-lg">
                     <span class="text-sm">Ресто:</span>
-                    <span id="changeAmount" class="text-lg font-bold text-green-600">0.00 €</span>
+                    <span id="changeAmount" class="text-lg font-bold text-green-600">0.00 лв.</span>
                 </div>
                 <div class="flex space-x-2">
                     <button onclick="handleConfirmCashPayment()" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg">
@@ -50,7 +49,14 @@
 </div>
 
 <script>
-    // Глобални функции за модала (като fallback, ако POSInstance не е готов)
+    // Функция за Enter в полето за сума
+    function handleCashAmountKeyPress(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            handleConfirmCashPayment();
+        }
+    }
+    
     function handleCardPayment() {
         if (window.POSInstance && window.POSInstance.paymentManager) {
             window.POSInstance.paymentManager.selectPaymentMethod('card');
@@ -65,8 +71,24 @@
     function handleCashPayment() {
         if (window.POSInstance && window.POSInstance.paymentManager) {
             window.POSInstance.paymentManager.showCashPayment();
+            
+            setTimeout(function() {
+                const cashAmountInput = document.getElementById('cashAmount');
+                if (cashAmountInput) {
+                    cashAmountInput.focus();
+                    cashAmountInput.select();
+                }
+            }, 100);
         } else if (window.showCashPayment) {
             window.showCashPayment();
+            
+            setTimeout(function() {
+                const cashAmountInput = document.getElementById('cashAmount');
+                if (cashAmountInput) {
+                    cashAmountInput.focus();
+                    cashAmountInput.select();
+                }
+            }, 100);
         } else {
             console.error('POSInstance not ready');
             alert('Моля, изчакайте системата да се зареди');
