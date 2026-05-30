@@ -109,7 +109,12 @@ class ProductsManager {
         this.pos = posInstance;
     }
 
-    loadAllProducts() {
+   loadAllProducts() {
+    // Покажи индикатора
+    $('#loadingIndicator').removeClass('hidden');
+    $('#productsGrid').addClass('hidden');
+    $('#scrollHint').addClass('hidden');
+    
         $.get('/pos/search', { search: '' })
             .done((products) => this.displayResults(products))
             .fail(() => console.error('Грешка при зареждане на продукти'));
@@ -169,8 +174,13 @@ class ProductsManager {
         }, 300);
     }
 
-    displayResults(products) {
-        let productsHtml = '';
+   displayResults(products) {
+    // Скрий индикатора за зареждане
+    $('#loadingIndicator').addClass('hidden');
+    $('#productsGrid').removeClass('hidden');
+    $('#scrollHint').removeClass('hidden');
+    
+    let productsHtml = '';
 
         if (products.length === 0) {
             productsHtml = '<div class="col-span-full text-center text-gray-500 py-8">Няма намерени продукти</div>';

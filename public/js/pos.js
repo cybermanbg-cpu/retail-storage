@@ -21,7 +21,7 @@ const POSUtils = {
     },
 
     formatMoney(amount) {
-        return amount.toFixed(2) + ' лв.';
+        return amount.toFixed(2) + ' €';
     },
 
     calculateVat(total) {
@@ -55,10 +55,10 @@ class CartUI {
                 <div class="flex-1">
                     <div class="font-semibold text-gray-800">${POSUtils.escapeHtml(item.product_name)}</div>
                     <div class="text-sm text-gray-600">${POSUtils.escapeHtml(item.variant_name || 'Стандартен')}</div>
-                    <div class="text-sm text-gray-500">${itemPrice.toFixed(2)} лв. × ${quantity}</div>
+                    <div class="text-sm text-gray-500">${itemPrice.toFixed(2)} € × ${quantity}</div>
                 </div>
                 <div class="text-right">
-                    <div class="font-bold text-primary-600">${itemTotal.toFixed(2)} лв.</div>
+                    <div class="font-bold text-primary-600">${itemTotal.toFixed(2)} €</div>
                     <button onclick="window.POSInstance.removeFromCart(${index})" 
                             class="delete-item-btn mt-2 w-full flex items-center justify-center gap-1 text-red-500 hover:text-white hover:bg-red-500 text-sm py-1 px-2 rounded-lg transition-all duration-200">
                         <i class="fas fa-trash-alt text-xs"></i>
@@ -109,7 +109,12 @@ class ProductsManager {
         this.pos = posInstance;
     }
 
-    loadAllProducts() {
+   loadAllProducts() {
+    // Покажи индикатора
+    $('#loadingIndicator').removeClass('hidden');
+    $('#productsGrid').addClass('hidden');
+    $('#scrollHint').addClass('hidden');
+    
         $.get('/pos/search', { search: '' })
             .done((products) => this.displayResults(products))
             .fail(() => console.error('Грешка при зареждане на продукти'));
@@ -169,8 +174,13 @@ class ProductsManager {
         }, 300);
     }
 
-    displayResults(products) {
-        let productsHtml = '';
+   displayResults(products) {
+    // Скрий индикатора за зареждане
+    $('#loadingIndicator').addClass('hidden');
+    $('#productsGrid').removeClass('hidden');
+    $('#scrollHint').removeClass('hidden');
+    
+    let productsHtml = '';
 
         if (products.length === 0) {
             productsHtml = '<div class="col-span-full text-center text-gray-500 py-8">Няма намерени продукти</div>';
@@ -196,7 +206,7 @@ class ProductsManager {
                                 <div class="text-sm text-gray-600">${POSUtils.escapeHtml((variant.color?.name || '') + ' ' + (variant.size?.name || ''))}</div>
                                 <div class="text-xs text-gray-400">Артикул: ${POSUtils.escapeHtml(product.sku)}</div>
                                 ${barcodeInfo}
-                                <div class="text-lg font-bold text-primary-600 mt-2">${POSUtils.parsePrice(variant.final_price).toFixed(2)} лв.</div>
+                                <div class="text-lg font-bold text-primary-600 mt-2">${POSUtils.parsePrice(variant.final_price).toFixed(2)} €</div>
                             </div>
                         `;
                     });
@@ -209,7 +219,7 @@ class ProductsManager {
                              data-price="${product.base_price}">
                             <div class="font-semibold text-gray-800">${POSUtils.escapeHtml(product.name)}</div>
                             <div class="text-xs text-gray-400">Артикул: ${POSUtils.escapeHtml(product.sku)}</div>
-                            <div class="text-lg font-bold text-primary-600 mt-2">${POSUtils.parsePrice(product.base_price).toFixed(2)} лв.</div>
+                            <div class="text-lg font-bold text-primary-600 mt-2">${POSUtils.parsePrice(product.base_price).toFixed(2)} €</div>
                         </div>
                     `;
                 }

@@ -246,7 +246,7 @@ class PosController extends Controller
                         $q->where('barcode', 'like', "%{$search}%");
                     });
             })
-            ->limit(50)
+            ->limit(10)
             ->get();
 
         return response()->json($products);
