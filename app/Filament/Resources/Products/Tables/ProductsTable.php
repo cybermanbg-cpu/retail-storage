@@ -14,58 +14,69 @@ class ProductsTable
     {
         return $table
             ->columns([
-                  TextColumn::make('owner.name')
+                TextColumn::make('owner.name')
                     ->label('Собственик')
                     ->searchable()
                     ->toggleable(),
-                    
+
                 TextColumn::make('sku')
                     ->label('Артикул')
                     ->searchable(),
-                    
+
                 TextColumn::make('name')
                     ->label('Име')
                     ->searchable(),
-                    
+
                 TextColumn::make('type')
                     ->label('Тип')
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => 
+                    ->formatStateUsing(
+                        fn(string $state): string =>
                         $state === 'product' ? '📦 Продукт' : '⚙️ Услуга'
                     )
-                    ->color(fn (string $state): string => 
+                    ->color(
+                        fn(string $state): string =>
                         $state === 'product' ? 'info' : 'success'
                     ),
-                    
+
+                TextColumn::make('unitOfMeasure.symbol')
+                    ->label('М. ед.')
+                    ->placeholder('—')
+                    ->toggleable()
+                    ->tooltip('Мерна единица')
+                    ->badge()
+                    ->color('gray'),
+
+
                 TextColumn::make('base_price')
                     ->label('Цена')
                     ->money('BGN')
                     ->sortable(),
-                    
+
                 TextColumn::make('vat_rate')
                     ->label('ДДС')
                     ->suffix('%'),
-                    
+
                 IconColumn::make('has_variants')
                     ->label('Варианти')
                     ->boolean(),
-                    
+
                 IconColumn::make('is_active')
                     ->label('Активен')
                     ->boolean(),
             ])
             ->filters([
-                 SelectFilter::make('owner_id')
+                SelectFilter::make('owner_id')
                     ->label('Собственик')
                     ->relationship('owner', 'name'),
-                    
+
                 SelectFilter::make('type')
                     ->label('Тип')
                     ->options([
                         'product' => 'Продукт',
                         'service' => 'Услуга',
                     ]),
-                    
+
                 SelectFilter::make('is_active')
                     ->label('Статус')
                     ->options([

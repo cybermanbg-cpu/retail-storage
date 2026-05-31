@@ -28,7 +28,8 @@ class PosController extends Controller
 
     public function index()
     {
-        $products = Product::with(['variants.color', 'variants.size'])
+        // Вземаме всички активни продукти (с и без варианти)
+        $products = Product::with(['variants.color', 'variants.size', 'unitOfMeasure'])
             ->where('type', 'product')
             ->where('is_active', true)
             ->get();
@@ -127,7 +128,7 @@ class PosController extends Controller
                 'change_amount' => 'nullable|numeric|min:0',
                 'items' => 'required|array',
                 'items.*.variant_id' => 'required|exists:product_variants,id',
-                'items.*.quantity' => 'required|integer|min:1',
+                'items.*.quantity' => 'required|numeric|min:0.001',
                 'items.*.unit_price' => 'required|numeric|min:0',
             ]);
 
@@ -192,6 +193,9 @@ class PosController extends Controller
                     'unit_price' => $unitPrice,
                     'vat_rate' => floatval($variant->product->vat_rate),
                     'total' => $unitPrice * $quantity,
+                    'unit_of_measure_snapshot' => $variant->product->unitOfMeasure?->symbol ?? 'бр.',
+                    'decimal_places_snapshot' => $variant->product->unitOfMeasure?->decimal_places ?? 0,
+
                 ]);
 
                 $stock = Stock::where('product_variant_id', intval($item['variant_id']))
@@ -235,8 +239,8 @@ class PosController extends Controller
             return response()->json([]);
         }
 
-        // Търсене в продукти и баркодове
-        $products = Product::with(['variants.color', 'variants.size', 'barcodes'])
+        // ⬇️ Добави 'unitOfMeasure' тук ⬇️
+        $products = Product::with(['variants.color', 'variants.size', 'barcodes', 'unitOfMeasure'])
             ->where('type', 'product')
             ->where('is_active', true)
             ->where(function ($query) use ($search) {
@@ -246,7 +250,7 @@ class PosController extends Controller
                         $q->where('barcode', 'like', "%{$search}%");
                     });
             })
-            ->limit(10)
+            ->limit(50)
             ->get();
 
         return response()->json($products);
@@ -259,6 +263,62 @@ class PosController extends Controller
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Добавяне на продукт без вариант (виртуален) в количката
+     */
+    public function addToCartVirtual(Request $request)
+    {
+        try {
+            $request->validate([
+                'product_id' => 'required|exists:products,id',
+                'storage_object_id' => 'required|exists:storage_objects,id',
+                'quantity' => 'required|numeric|min:0.001',
+                'unit_price' => 'required|numeric|min:0',
+                'unit' => 'nullable|string',
+                'decimal_places' => 'nullable|integer',
+            ]);
+
+            // Намери или създай вариант за продукта
+            $variant = ProductVariant::firstOrCreate(
+                ['product_id' => $request->product_id],
+                [
+                    'color_id' => null,
+                    'size_id' => null,
+                    'sku_suffix' => null,
+                    'price_adjustment' => 0,
+                    'is_active' => true,
+                ]
+            );
+
+            // Вземаме активната количка на потребителя
+            $activeCarts = $this->cartService->getActiveCarts();
+            $cart = $activeCarts->first();
+
+            if (!$cart) {
+                $storageObject = StorageObject::find($request->storage_object_id);
+                $cart = $this->cartService->createCart($storageObject->id);
+            }
+
+            // Добавяне в количката
+            $result = $this->cartService->addItemWithDetails(
+                $cart->id,
+                $variant->id,
+                $request->quantity,
+                $request->unit_price,
+                $request->unit ?? 'бр.',
+                $request->decimal_places ?? 0
+            );
+
+            return response()->json($result);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
         }
     }
 }

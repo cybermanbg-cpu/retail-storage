@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Models\ActiveCart;
+use App\Models\Product;
 use App\Observers\ActiveCartObserver;
+use App\Observers\ProductObserver;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -22,5 +24,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         ActiveCart::observe(ActiveCartObserver::class);
+        Product::observe(ProductObserver::class);
     }
 }

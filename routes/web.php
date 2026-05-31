@@ -43,6 +43,9 @@ Route::prefix('pos')->middleware(['auth'])->group(function () {
     Route::post('/cart/{cartId}/add', [PosController::class, 'addToCart'])->name('pos.cart.add');
     Route::delete('/cart/{cartId}/remove', [PosController::class, 'removeFromCart'])->name('pos.cart.remove');
     Route::delete('/cart/{cartId}', [PosController::class, 'deleteCart'])->name('pos.cart.delete');
+    
+    // ⭐ МАРШРУТ ЗА ВИРТУАЛНИ ВАРИАНТИ (продукти без варианти) ⭐
+    Route::post('/add-to-cart-virtual', [PosController::class, 'addToCartVirtual'])->name('pos.cart.add-virtual');
 });
 
 // ========================================
@@ -56,23 +59,6 @@ Route::middleware(['auth'])->prefix('stocks')->group(function () {
 
 // Публична проверка на наличност (за POS)
 Route::get('/stock/check', [StockController::class, 'check'])->name('stock.check');
-
-// ========================================
-// ПОКУПКИ (ПРИДОБИВАНЕ НА СТОКИ)
-// ========================================
-Route::middleware(['auth'])->prefix('purchases')->group(function () {
-    Route::get('/', [PurchaseController::class, 'index'])->name('purchases.index');
-    Route::get('/create', [PurchaseController::class, 'create'])->name('purchases.create');
-    Route::post('/', [PurchaseController::class, 'store'])->name('purchases.store');
-    Route::get('/{purchase}', [PurchaseController::class, 'show'])->name('purchases.show');
-    Route::delete('/{purchase}', [PurchaseController::class, 'destroy'])->name('purchases.destroy');
-});
-
-// ========================================
-// ФИЛМЕНТ АДМИНИСТРАТИВЕН ПАНЕЛ
-// ========================================
-// Filament се зарежда автоматично на /admin
-// НЕ добавяйте маршрути, които започват с /admin, за да няма конфликти
 
 // ========================================
 // FALLBACK (опционално)

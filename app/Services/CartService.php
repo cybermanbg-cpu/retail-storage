@@ -317,4 +317,47 @@ class CartService
             ];
         }
     }
+
+    public function addItemWithDetails($cartId, $variantId, $quantity, $unitPrice, $unit, $decimalPlaces)
+    {
+        $cart = $this->getCart($cartId);
+
+        $variant = ProductVariant::with('product')->find($variantId);
+        if (!$variant) {
+            return ['success' => false, 'message' => 'Продуктът не беше намерен'];
+        }
+
+        $items = $cart->items ?? [];
+        $existingIndex = null;
+
+        foreach ($items as $index => $item) {
+            if ($item['variant_id'] == $variantId) {
+                $existingIndex = $index;
+                break;
+            }
+        }
+
+        if ($existingIndex !== null) {
+            $items[$existingIndex]['quantity'] += $quantity;
+            $items[$existingIndex]['total'] = $items[$existingIndex]['quantity'] * $unitPrice;
+        } else {
+            $items[] = [
+                'variant_id' => $variantId,
+                'product_name' => $variant->product?->name ?? 'N/A',
+                'variant_name' => '',
+                'price' => $unitPrice,
+                'quantity' => $quantity,
+                'total' => $unitPrice * $quantity,
+                'unit' => $unit,
+                'decimal_places' => $decimalPlaces,
+                'sku' => $variant->full_sku ?? '',
+            ];
+        }
+
+        $cart->items = $items;
+        $cart->total_amount = collect($items)->sum('total');
+        $cart->save();
+
+        return ['success' => true, 'cart' => $cart];
+    }
 }

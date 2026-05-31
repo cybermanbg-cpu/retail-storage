@@ -6,7 +6,9 @@ use App\Models\ActiveCart;
 use App\Models\Owner;
 use App\Models\Product;
 use App\Models\Receipt;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class HomeController extends Controller
 {
@@ -27,7 +29,10 @@ class HomeController extends Controller
         $ownerId = $this->getCurrentOwnerId();
         $user = Auth::user();
         
-        // Статистики само за текущия собственик
+        // ========================================
+        // СТАТИСТИКИ ЗА СОБСТВЕНИКА
+        // ========================================
+        
         $totalProducts = Product::where('owner_id', $ownerId)
             ->where('type', 'product')
             ->count();
@@ -38,7 +43,96 @@ class HomeController extends Controller
         
         $totalSales = Receipt::where('owner_id', $ownerId)->sum('total_amount');
         
-        // Проверка дали потребителят има роля (с безопасно извикване)
+        // ========================================
+        // ПЕРСОНАЛЕН ОБОРОТ НА ЛОГНАТИЯ КАСИЕР
+        // ========================================
+        
+        $myTodayTurnover = Receipt::where('owner_id', $ownerId)
+            ->where('user_id', $user->id)
+            ->whereDate('created_at', today())
+            ->sum('total_amount');
+        
+        $myWeekTurnover = Receipt::where('owner_id', $ownerId)
+            ->where('user_id', $user->id)
+            ->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])
+            ->sum('total_amount');
+        
+        $myMonthTurnover = Receipt::where('owner_id', $ownerId)
+            ->where('user_id', $user->id)
+            ->whereMonth('created_at', now()->month)
+            ->sum('total_amount');
+        
+        $myTotalTurnover = Receipt::where('owner_id', $ownerId)
+            ->where('user_id', $user->id)
+            ->sum('total_amount');
+        
+        $myTodaySalesCount = Receipt::where('owner_id', $ownerId)
+            ->where('user_id', $user->id)
+            ->whereDate('created_at', today())
+            ->count();
+        
+        // ========================================
+        // ОБОРОТИ ПО КАСИЕРИ ЗА ДЕНЯ (само за admin/owner)
+        // ========================================
+        
+        $isAdmin = $user->hasRole('super_admin') || $user->hasRole('owner');
+        $cashierTurnovers = collect();
+        
+        if ($isAdmin) {
+            // Обороти по касиери за днешния ден
+            $cashierTurnovers = User::where('owner_id', $ownerId)
+                ->whereHas('roles', function ($q) {
+                    $q->where('name', 'cashier');
+                })
+                ->withCount(['receipts as today_sales_count' => function ($q) {
+                    $q->whereDate('created_at', today());
+                }])
+                ->withSum(['receipts as today_turnover' => function ($q) {
+                    $q->whereDate('created_at', today());
+                }], 'total_amount')
+                ->orderByDesc('today_turnover')
+                ->get()
+                ->map(function ($cashier) {
+                    return [
+                        'id' => $cashier->id,
+                        'name' => $cashier->name,
+                        'today_sales_count' => $cashier->today_sales_count,
+                        'today_turnover' => $cashier->today_turnover ?? 0,
+                    ];
+                });
+        }
+        
+        // ========================================
+        // ТОП 5 КАСИЕРИ ЗА МЕСЕЦА (само за admin/owner)
+        // ========================================
+        
+        $topCashiers = collect();
+        
+        if ($isAdmin) {
+            $topCashiers = User::where('owner_id', $ownerId)
+                ->whereHas('roles', function ($q) {
+                    $q->where('name', 'cashier');
+                })
+                ->withSum(['receipts as monthly_turnover' => function ($q) {
+                    $q->whereMonth('created_at', now()->month);
+                }], 'total_amount')
+                ->orderByDesc('monthly_turnover')
+                ->limit(5)
+                ->get()
+                ->map(function ($cashier) {
+                    return [
+                        'id' => $cashier->id,
+                        'name' => $cashier->name,
+                        'monthly_turnover' => $cashier->monthly_turnover ?? 0,
+                    ];
+                });
+        }
+        
+        // ========================================
+        // ДРУГИ СТАТИСТИКИ
+        // ========================================
+        
+        // Проверка дали потребителят има роля
         $isAdmin = $user->hasRole('super_admin') || $user->hasRole('owner');
         
         // Незавършени продажби за текущия обект/касиер
@@ -69,7 +163,15 @@ class HomeController extends Controller
             'totalSales', 
             'incompleteSales',
             'latestProducts',
-            'activeCarts'
+            'activeCarts',
+            'myTodayTurnover',
+            'myWeekTurnover',
+            'myMonthTurnover',
+            'myTotalTurnover',
+            'myTodaySalesCount',
+            'cashierTurnovers',
+            'topCashiers',
+            'isAdmin'
         ));
     }
     

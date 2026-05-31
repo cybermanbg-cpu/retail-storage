@@ -12,6 +12,8 @@ class ReceiptItem extends Model
         'product_variant_id',
         'product_name_snapshot',
         'sku_snapshot',
+        'unit_of_measure_snapshot',
+        'decimal_places_snapshot',
         'color_name',
         'size_name',
         'quantity',
@@ -21,10 +23,11 @@ class ReceiptItem extends Model
     ];
 
     protected $casts = [
-        'quantity' => 'integer',
-        'unit_price' => 'decimal:2',
-        'vat_rate' => 'decimal:2',
-        'total' => 'decimal:2',
+        'quantity' => 'decimal:3',
+        'unit_cost' => 'decimal:2',
+        'total_cost' => 'decimal:2',
+        'delivery_cost_share' => 'decimal:2',
+        'final_unit_cost' => 'decimal:2',
     ];
 
     public function receipt(): BelongsTo

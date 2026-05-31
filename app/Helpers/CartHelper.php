@@ -19,21 +19,21 @@ class CartHelper
     /**
      * Проверка на наличност за вариант в даден обект
      */
-    public static function checkStock(int $variantId, int $storageObjectId, int $requestedQty = 1): array
+    public static function checkStock(int $variantId, int $storageObjectId, float $requestedQty = 1): array
     {
         $stock = Stock::where('product_variant_id', $variantId)
             ->where('storage_object_id', $storageObjectId)
             ->first();
 
-        $available = $stock ? $stock->available : 0;
+        $available = $stock ? floatval($stock->available) : 0;
 
         return [
             'available' => $available,
             'has_stock' => $available >= $requestedQty,
-            'current_qty' => $stock ? $stock->quantity : 0,
+            'current_qty' => $stock ? floatval($stock->quantity) : 0,
             'message' => $available >= $requestedQty
                 ? 'Наличността е достатъчна'
-                : 'Няма достатъчна наличност. Налични: ' . $available,
+                : 'Няма достатъчна наличност. Налични: ' . number_format($available, 3),
         ];
     }
 

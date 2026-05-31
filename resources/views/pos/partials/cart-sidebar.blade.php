@@ -62,3 +62,46 @@
         </div>
     </div>
 </div>
+
+<!-- Модал за избор на количество -->
+<!-- Модал за избор на количество -->
+<div id="quantityModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+    <div class="relative top-32 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Избор на количество</h3>
+            
+            <div class="mb-4">
+                <p class="text-sm text-gray-600 mb-1">Продукт:</p>
+                <p id="modalProductName" class="font-semibold text-gray-800">-</p>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">Количество (<span id="modalUnitSymbol">кг</span>):</label>
+                <input type="text" id="modalQuantity" 
+                       class="w-full text-center px-3 py-2 border border-gray-300 rounded-lg focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                       placeholder="0.000"
+                       autofocus>
+                <p class="text-xs text-gray-400 mt-1">Използвайте точка (.) или запетая (,) за дробни числа</p>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">Единична цена:</label>
+                <p id="modalUnitPrice" class="text-xl font-bold text-primary-600">0.00 €</p>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">Обща сума:</label>
+                <p id="modalTotalPrice" class="text-2xl font-bold text-green-600">0.00 €</p>
+            </div>
+            
+            <div class="flex space-x-3">
+                <button id="confirmQuantityBtn" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-semibold">
+                    <i class="fas fa-check mr-2"></i> Добави
+                </button>
+                <button id="cancelQuantityBtn" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 rounded-lg font-semibold">
+                    <i class="fas fa-times mr-2"></i> Отказ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

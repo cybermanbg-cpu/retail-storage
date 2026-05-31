@@ -12,7 +12,7 @@ class StockForm
     {
         return $schema
             ->components([
-                 Select::make('product_variant_id')
+                Select::make('product_variant_id')
                     ->label('Продукт / Вариант')
                     ->relationship('productVariant', 'id')
                     ->getOptionLabelFromRecordUsing(fn ($record) => 
@@ -36,21 +36,22 @@ class StockForm
                     ->numeric()
                     ->required()
                     ->default(0)
-                    ->integer()
-                    ->minValue(0),
+                    ->step(0.001)           // ⭐ Добави стъпка 0.001
+                    ->minValue(0)           // ⭐ Минимална стойност 0
+                    ->helperText('Допустими са дробни числа (напр. 0.500, 1.250)'),
                     
                 TextInput::make('reserved_quantity')
                     ->label('Резервирано количество')
                     ->numeric()
                     ->default(0)
-                    ->integer()
+                    ->step(0.001)           // ⭐ Добави стъпка 0.001
                     ->minValue(0),
                     
                 TextInput::make('min_quantity')
                     ->label('Минимално количество')
                     ->numeric()
                     ->default(0)
-                    ->integer()
+                    ->step(0.001)           // ⭐ Добави стъпка 0.001
                     ->minValue(0)
                     ->helperText('При достигане на това количество, системата ще предупреждава'),
             ]);

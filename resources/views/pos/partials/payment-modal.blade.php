@@ -9,17 +9,17 @@
             </div>
 
             <div class="space-y-3">
-                <button onclick="handleCardPayment()" 
+                <button onclick="window.POSInstance.paymentManager.selectPaymentMethod('card')" 
                         class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition">
                     <i class="fas fa-credit-card mr-2"></i> Плащане с карта
                 </button>
 
-                <button onclick="handleCashPayment()" 
+                <button onclick="window.POSInstance.paymentManager.showCashPayment()" 
                         class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold transition">
                     <i class="fas fa-money-bill mr-2"></i> Плащане в брой
                 </button>
 
-                <button onclick="handleCloseModal()" 
+                <button onclick="window.POSInstance.paymentManager.closeModal()" 
                         class="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 py-3 rounded-lg font-semibold transition">
                     <i class="fas fa-arrow-left mr-2"></i> Върни се към количката
                 </button>
@@ -36,10 +36,10 @@
                     <span id="changeAmount" class="text-lg font-bold text-green-600">0.00 лв.</span>
                 </div>
                 <div class="flex space-x-2">
-                    <button onclick="handleConfirmCashPayment()" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg">
+                    <button onclick="window.POSInstance.paymentManager.confirmCashPayment()" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg">
                         <i class="fas fa-check mr-2"></i> Потвърди
                     </button>
-                    <button onclick="handleHideCashPayment()" class="flex-1 bg-gray-300 hover:bg-gray-400 py-2 rounded-lg">
+                    <button onclick="window.POSInstance.paymentManager.hideCashPayment()" class="flex-1 bg-gray-300 hover:bg-gray-400 py-2 rounded-lg">
                         <i class="fas fa-times mr-2"></i> Отказ
                     </button>
                 </div>
@@ -53,78 +53,9 @@
     function handleCashAmountKeyPress(event) {
         if (event.key === 'Enter') {
             event.preventDefault();
-            handleConfirmCashPayment();
-        }
-    }
-    
-    function handleCardPayment() {
-        if (window.POSInstance && window.POSInstance.paymentManager) {
-            window.POSInstance.paymentManager.selectPaymentMethod('card');
-        } else if (window.selectPaymentMethod) {
-            window.selectPaymentMethod('card');
-        } else {
-            console.error('POSInstance not ready');
-            alert('Моля, изчакайте системата да се зареди');
-        }
-    }
-    
-    function handleCashPayment() {
-        if (window.POSInstance && window.POSInstance.paymentManager) {
-            window.POSInstance.paymentManager.showCashPayment();
-            
-            setTimeout(function() {
-                const cashAmountInput = document.getElementById('cashAmount');
-                if (cashAmountInput) {
-                    cashAmountInput.focus();
-                    cashAmountInput.select();
-                }
-            }, 100);
-        } else if (window.showCashPayment) {
-            window.showCashPayment();
-            
-            setTimeout(function() {
-                const cashAmountInput = document.getElementById('cashAmount');
-                if (cashAmountInput) {
-                    cashAmountInput.focus();
-                    cashAmountInput.select();
-                }
-            }, 100);
-        } else {
-            console.error('POSInstance not ready');
-            alert('Моля, изчакайте системата да се зареди');
-        }
-    }
-    
-    function handleCloseModal() {
-        if (window.POSInstance && window.POSInstance.paymentManager) {
-            window.POSInstance.paymentManager.closeModal();
-        } else if (window.closePaymentModal) {
-            window.closePaymentModal();
-        } else {
-            console.error('POSInstance not ready');
-            document.getElementById('paymentModal').classList.add('hidden');
-        }
-    }
-    
-    function handleConfirmCashPayment() {
-        if (window.POSInstance && window.POSInstance.paymentManager) {
-            window.POSInstance.paymentManager.confirmCashPayment();
-        } else if (window.confirmCashPayment) {
-            window.confirmCashPayment();
-        } else {
-            console.error('POSInstance not ready');
-            alert('Моля, изчакайте системата да се зареди');
-        }
-    }
-    
-    function handleHideCashPayment() {
-        if (window.POSInstance && window.POSInstance.paymentManager) {
-            window.POSInstance.paymentManager.hideCashPayment();
-        } else if (window.hideCashPayment) {
-            window.hideCashPayment();
-        } else {
-            console.error('POSInstance not ready');
-            document.getElementById('cashPaymentSection').classList.add('hidden');
+            if (window.POSInstance && window.POSInstance.paymentManager) {
+                window.POSInstance.paymentManager.confirmCashPayment();
+            }
         }
     }
 </script>

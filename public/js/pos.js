@@ -17,7 +17,7 @@ const POSUtils = {
     },
 
     parseQuantity(qty) {
-        return parseInt(qty) || 0;
+        return parseFloat(qty) || 0;
     },
 
     formatMoney(amount) {
@@ -26,6 +26,11 @@ const POSUtils = {
 
     calculateVat(total) {
         return total * 0.20;
+    },
+
+    isFractionalUnit(unit) {
+        const fractionalUnits = ['кг', 'kg', 'л', 'l', 'L', 'м', 'm', 'м²', 'sqm', 'кв.м'];
+        return fractionalUnits.includes(unit?.toLowerCase());
     }
 };
 
@@ -46,16 +51,17 @@ class CartUI {
             let itemTotal = POSUtils.parsePrice(item.total);
             let itemPrice = POSUtils.parsePrice(item.price);
             let quantity = POSUtils.parseQuantity(item.quantity);
+            let unit = item.unit || 'бр.';
 
             total += itemTotal;
             itemCount += quantity;
 
-         cartHtml += `
+            cartHtml += `
             <div class="cart-item p-3 border-b flex justify-between items-center hover:bg-gray-50 transition">
                 <div class="flex-1">
                     <div class="font-semibold text-gray-800">${POSUtils.escapeHtml(item.product_name)}</div>
                     <div class="text-sm text-gray-600">${POSUtils.escapeHtml(item.variant_name || 'Стандартен')}</div>
-                    <div class="text-sm text-gray-500">${itemPrice.toFixed(2)} € × ${quantity}</div>
+                    <div class="text-sm text-gray-500">${itemPrice.toFixed(2)} € × ${quantity.toFixed(3)} ${unit}</div>
                 </div>
                 <div class="text-right">
                     <div class="font-bold text-primary-600">${itemTotal.toFixed(2)} €</div>
@@ -79,17 +85,14 @@ class CartUI {
 
         $('#cartItems').html(cartHtml);
 
-        // Актуализиране на броя артикули
-        $('#itemsCount').text(itemCount);
-        $('#itemsCountFooter').text(itemCount);
+        $('#itemsCount').text(itemCount.toFixed(3));
+        $('#itemsCountFooter').text(itemCount.toFixed(3));
 
-        // Изчисляване на ДДС
         let vat = POSUtils.calculateVat(total);
         $('#totalAmount').text(POSUtils.formatMoney(total));
         $('#totalVat').text(POSUtils.formatMoney(vat));
 
-        // Активиране/деактивиране на бутона
-        if (itemCount === 0) {
+        if (this.pos.currentItems.length === 0) {
             $('#checkoutBtn').prop('disabled', true).addClass('opacity-50 cursor-not-allowed');
         } else {
             $('#checkoutBtn').prop('disabled', false).removeClass('opacity-50 cursor-not-allowed');
@@ -97,7 +100,8 @@ class CartUI {
     }
 
     updateCartBadge() {
-        $(`.cart-tab[data-cart-id="${this.pos.currentCartId}"] .cart-badge`).text(this.pos.currentItems.length);
+        let itemCount = this.pos.currentItems.reduce((sum, item) => sum + POSUtils.parseQuantity(item.quantity), 0);
+        $(`.cart-tab[data-cart-id="${this.pos.currentCartId}"] .cart-badge`).text(itemCount.toFixed(3));
     }
 }
 
@@ -109,15 +113,14 @@ class ProductsManager {
         this.pos = posInstance;
     }
 
-   loadAllProducts() {
-    // Покажи индикатора
-    $('#loadingIndicator').removeClass('hidden');
-    $('#productsGrid').addClass('hidden');
-    $('#scrollHint').addClass('hidden');
-    
+    loadAllProducts() {
+        $('#loadingIndicator').removeClass('hidden');
+        $('#productsGrid').addClass('hidden');
+        $('#scrollHint').addClass('hidden');
+
         $.get('/pos/search', { search: '' })
             .done((products) => this.displayResults(products))
-            .fail(() => console.error('Грешка при зареждане на продукти'));
+            .fail(() => {});
     }
 
     searchProducts(search) {
@@ -127,12 +130,30 @@ class ProductsManager {
 
                 if (exactMatch && exactMatch.variants && exactMatch.variants.length > 0) {
                     const variant = exactMatch.variants[0];
-                    this.pos.addToCart(
-                        variant.id,
-                        exactMatch.name,
-                        (variant.color?.name || '') + ' ' + (variant.size?.name || ''),
-                        variant.final_price
-                    );
+                    const unit = exactMatch.unit_of_measure?.symbol || 'бр.';
+
+                    if (POSUtils.isFractionalUnit(unit)) {
+                        window.selectedProduct = {
+                            variantId: variant.id,
+                            productName: exactMatch.name,
+                            variantName: (variant.color?.name || '') + ' ' + (variant.size?.name || ''),
+                            price: variant.final_price,
+                            unit: unit,
+                            decimalPlaces: exactMatch.unit_of_measure?.decimal_places || 3
+                        };
+                        openQuantityModal();
+                    } else {
+                        this.pos.addToCartWithQuantity(
+                            variant.id,
+                            exactMatch.name,
+                            (variant.color?.name || '') + ' ' + (variant.size?.name || ''),
+                            variant.final_price,
+                            1,
+                            unit,
+                            exactMatch.unit_of_measure?.decimal_places || 0
+                        );
+                    }
+
                     const $searchInput = $('#searchInput');
                     const originalValue = $searchInput.val();
                     $searchInput.val('✅ ' + originalValue);
@@ -146,7 +167,7 @@ class ProductsManager {
                     this.displayResults(products);
                 }
             })
-            .fail(() => console.error('Грешка при търсене на продукти'));
+            .fail(() => {});
     }
 
     findExactBarcodeMatch(products, barcode) {
@@ -174,13 +195,12 @@ class ProductsManager {
         }, 300);
     }
 
-   displayResults(products) {
-    // Скрий индикатора за зареждане
-    $('#loadingIndicator').addClass('hidden');
-    $('#productsGrid').removeClass('hidden');
-    $('#scrollHint').removeClass('hidden');
-    
-    let productsHtml = '';
+    displayResults(products) {
+        $('#loadingIndicator').addClass('hidden');
+        $('#productsGrid').removeClass('hidden');
+        $('#scrollHint').removeClass('hidden');
+
+        let productsHtml = '';
 
         if (products.length === 0) {
             productsHtml = '<div class="col-span-full text-center text-gray-500 py-8">Няма намерени продукти</div>';
@@ -198,29 +218,45 @@ class ProductsManager {
 
                         productsHtml += `
                             <div class="product-card bg-white border border-gray-200 rounded-lg p-3 cursor-pointer hover:border-primary-500 transition"
-                                 data-variant-id="${variant.id}"
-                                 data-product-name="${POSUtils.escapeHtml(product.name)}"
-                                 data-variant-name="${POSUtils.escapeHtml((variant.color?.name || '') + ' ' + (variant.size?.name || ''))}"
-                                 data-price="${variant.final_price}">
+                                data-variant-id="${variant.id}"
+                                data-product-name="${POSUtils.escapeHtml(product.name)}"
+                                data-variant-name="${POSUtils.escapeHtml((variant.color?.name || '') + ' ' + (variant.size?.name || ''))}"
+                                data-price="${variant.final_price}"
+                                data-unit="${product.unit_of_measure?.symbol || 'бр.'}"
+                                data-decimal-places="${product.unit_of_measure?.decimal_places || 0}">
                                 <div class="font-semibold text-gray-800">${POSUtils.escapeHtml(product.name)}</div>
                                 <div class="text-sm text-gray-600">${POSUtils.escapeHtml((variant.color?.name || '') + ' ' + (variant.size?.name || ''))}</div>
                                 <div class="text-xs text-gray-400">Артикул: ${POSUtils.escapeHtml(product.sku)}</div>
+                                <div class="text-xs text-gray-400">Мерна единица: ${product.unit_of_measure?.symbol || 'бр.'}</div>
                                 ${barcodeInfo}
                                 <div class="text-lg font-bold text-primary-600 mt-2">${POSUtils.parsePrice(variant.final_price).toFixed(2)} €</div>
                             </div>
                         `;
                     });
                 } else {
+                    let barcodeInfo = '';
+                    if (product.barcodes && product.barcodes.length > 0) {
+                        let primaryBarcode = product.barcodes.find(b => b.is_primary);
+                        if (primaryBarcode) {
+                            barcodeInfo = `<div class="text-xs text-gray-400">Баркод: ${primaryBarcode.barcode}</div>`;
+                        }
+                    }
+
                     productsHtml += `
-                        <div class="product-card bg-white border border-gray-200 rounded-lg p-3 cursor-pointer hover:border-primary-500 transition"
-                             data-variant-id="${product.id}"
-                             data-product-name="${POSUtils.escapeHtml(product.name)}"
-                             data-variant-name=""
-                             data-price="${product.base_price}">
-                            <div class="font-semibold text-gray-800">${POSUtils.escapeHtml(product.name)}</div>
-                            <div class="text-xs text-gray-400">Артикул: ${POSUtils.escapeHtml(product.sku)}</div>
-                            <div class="text-lg font-bold text-primary-600 mt-2">${POSUtils.parsePrice(product.base_price).toFixed(2)} €</div>
-                        </div>
+                    <div class="product-card bg-white border border-gray-200 rounded-lg p-3 cursor-pointer hover:border-primary-500 transition"
+                         data-variant-id="product_${product.id}"
+                         data-product-id="${product.id}"
+                         data-product-name="${POSUtils.escapeHtml(product.name)}"
+                         data-variant-name=""
+                         data-price="${product.base_price}"
+                         data-unit="${product.unit_of_measure?.symbol || 'бр.'}"
+                         data-decimal-places="${product.unit_of_measure?.decimal_places || 0}">
+                        <div class="font-semibold text-gray-800">${POSUtils.escapeHtml(product.name)}</div>
+                        <div class="text-xs text-gray-400">Артикул: ${POSUtils.escapeHtml(product.sku)}</div>
+                        <div class="text-xs text-gray-400">Мерна единица: ${product.unit_of_measure?.symbol || 'бр.'}</div>
+                        ${barcodeInfo}
+                        <div class="text-lg font-bold text-primary-600 mt-2">${POSUtils.parsePrice(product.base_price).toFixed(2)} €</div>
+                    </div>
                     `;
                 }
             });
@@ -234,17 +270,141 @@ class ProductsManager {
         $('.product-card').off('click').on('click', (e) => {
             let $card = $(e.currentTarget);
             let variantId = $card.data('variant-id');
+            let productId = $card.data('product-id');
             let productName = $card.data('product-name');
             let variantName = $card.data('variant-name');
             let price = $card.data('price');
+            let unit = $card.data('unit') || 'бр.';
+            let decimalPlaces = $card.data('decimal-places') || 0;
 
-            this.pos.addToCart(variantId, productName, variantName, price);
+            if (!variantId && productId) {
+                variantId = 'product_' + productId;
+            }
+
+            if (POSUtils.isFractionalUnit(unit)) {
+                window.selectedProduct = {
+                    variantId: variantId,
+                    productId: productId,
+                    productName: productName,
+                    variantName: variantName,
+                    price: price,
+                    unit: unit,
+                    decimalPlaces: decimalPlaces
+                };
+                openQuantityModal();
+            } else {
+                this.pos.addToCartWithQuantity(
+                    variantId,
+                    productName,
+                    variantName,
+                    price,
+                    1,
+                    unit,
+                    decimalPlaces
+                );
+            }
 
             $card.addClass('bg-green-50');
             setTimeout(() => $card.removeClass('bg-green-50'), 300);
         });
     }
 }
+
+// ============================================
+// МОДУЛ: Модал за количество
+// ============================================
+function openQuantityModal() {
+    if (!window.selectedProduct) return;
+
+    let unit = window.selectedProduct.unit || 'кг';
+    $('#modalProductName').text(window.selectedProduct.productName + (window.selectedProduct.variantName ? ' - ' + window.selectedProduct.variantName : ''));
+    $('#modalUnitPrice').text(parseFloat(window.selectedProduct.price).toFixed(2) + ' €');
+    $('#modalUnitSymbol').text(unit);
+    $('#modalQuantity').val('');
+
+    updateModalTotal();
+    $('#quantityModal').removeClass('hidden');
+
+    setTimeout(() => {
+        $('#modalQuantity').focus();
+    }, 100);
+}
+
+function parseQuantityInput(value) {
+    if (!value) return 0;
+    let normalized = value.replace(',', '.');
+    let parsed = parseFloat(normalized);
+    return isNaN(parsed) ? 0 : parsed;
+}
+
+function updateModalTotal() {
+    let rawValue = $('#modalQuantity').val();
+    let quantity = parseQuantityInput(rawValue);
+    let price = window.selectedProduct.price;
+    let total = quantity * price;
+
+    $('#modalTotalPrice').text(total.toFixed(2) + ' €');
+}
+
+function closeQuantityModal() {
+    $('#quantityModal').addClass('hidden');
+    window.selectedProduct = null;
+}
+
+$(document).ready(function () {
+    $('#modalQuantity').on('input', function () {
+        updateModalTotal();
+    });
+
+    $('#modalQuantity').on('keypress', function (e) {
+        const allowed = /[0-9.,]/;
+        if (!allowed.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab' && e.key !== 'Enter') {
+            e.preventDefault();
+        }
+    });
+
+    $('#modalQuantity').on('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            $('#confirmQuantityBtn').click();
+        }
+    });
+
+    $('#confirmQuantityBtn').click(() => {
+        if (!window.selectedProduct) return;
+
+        let rawValue = $('#modalQuantity').val();
+        let quantity = parseQuantityInput(rawValue);
+
+        if (quantity <= 0) {
+            alert('Моля, въведете валидно количество (пример: 0.500, 1.250, 2,5)');
+            $('#modalQuantity').focus();
+            return;
+        }
+
+        window.POSInstance.addToCartWithQuantity(
+            window.selectedProduct.variantId,
+            window.selectedProduct.productName,
+            window.selectedProduct.variantName,
+            window.selectedProduct.price,
+            quantity,
+            window.selectedProduct.unit,
+            window.selectedProduct.decimalPlaces
+        );
+
+        closeQuantityModal();
+    });
+
+    $('#cancelQuantityBtn').click(() => {
+        closeQuantityModal();
+    });
+
+    $(document).on('keydown', function (e) {
+        if (e.key === 'Escape' && !$('#quantityModal').hasClass('hidden')) {
+            closeQuantityModal();
+        }
+    });
+});
 
 // ============================================
 // МОДУЛ: Плащане
@@ -278,6 +438,14 @@ class PaymentManager {
         $('#cashAmount').val('');
         $('#changeInfo').addClass('hidden');
         this.selectedPaymentMethod = 'cash';
+
+        setTimeout(() => {
+            const cashInput = document.getElementById('cashAmount');
+            if (cashInput) {
+                cashInput.focus();
+                cashInput.select();
+            }
+        }, 100);
 
         $('#cashAmount').off('input').on('input', () => {
             let total = POSUtils.parsePrice($('#modalTotalAmount').text());
@@ -337,35 +505,42 @@ class PaymentManager {
                 storage_object_id: this.pos.storageObjectId,
                 client_id: clientId,
                 payment_method: paymentMethod,
-                amount_paid: amountPaid,
-                change_amount: changeAmount,
+                amount_paid: parseFloat(amountPaid),
+                change_amount: parseFloat(changeAmount),
                 items: this.pos.currentItems.map(item => ({
                     variant_id: item.variant_id,
                     quantity: item.quantity,
                     unit_price: item.price
-                })),
-                _token: this.pos.config.csrfToken
+                }))
+            },
+            headers: {
+                'X-CSRF-TOKEN': this.pos.config.csrfToken
             },
             success: (response) => {
                 if (response.success) {
-                    let message = `✅ Продажбата е успешна!\nНомер: ${response.receipt_number}\n`;
+                    let message = `✅ Продажбата е успешна!\nНомер: ${response.receipt_number || '—'}\n`;
                     if (paymentMethod === 'cash') {
                         message += `Получено: ${POSUtils.formatMoney(amountPaid)}\nРесто: ${POSUtils.formatMoney(changeAmount)}`;
                     } else {
-                        message += `Платено с карта: ${POSUtils.formatMoney(amountPaid)}`;
+                        message += `Платено с карта`;
                     }
                     alert(message);
                     location.reload();
                 } else {
-                    alert('❌ Грешка: ' + response.message);
+                    alert('❌ Грешка: ' + (response.message || 'Неизвестна грешка'));
                 }
             },
             error: (xhr) => {
-                let errorMsg = 'Възникна грешка при записване на продажбата!';
-                if (xhr.responseJSON && xhr.responseJSON.message) {
-                    errorMsg += '\n' + xhr.responseJSON.message;
+                if (xhr.status === 419) {
+                    alert('CSRF Token изтече. Натисни F5 и опитай отново.');
+                } else if (xhr.status === 422) {
+                    const errors = xhr.responseJSON?.errors || xhr.responseJSON;
+                    alert('Валидационна грешка: ' + JSON.stringify(errors));
+                } else if (xhr.status === 404) {
+                    alert('404 - Route не е намерен. Изпълни php artisan route:clear');
+                } else {
+                    alert('Грешка ' + xhr.status + ': ' + (xhr.responseJSON?.message || xhr.statusText));
                 }
-                alert(errorMsg);
             }
         });
     }
@@ -440,23 +615,63 @@ class POS {
         });
     }
 
-    addToCart(variantId, productName, variantName, price) {
+    addToCart(variantId, productName, variantName, price, unit = 'бр.', decimalPlaces = 0) {
+        this.addToCartWithQuantity(variantId, productName, variantName, price, 1, unit, decimalPlaces);
+    }
+
+    addToCartWithQuantity(variantId, productName, variantName, price, quantity, unit = 'бр.', decimalPlaces = 0) {
+        let isVirtual = typeof variantId === 'string' && variantId.startsWith('product_');
+
+        if (isVirtual) {
+            $.post('/pos/add-to-cart-virtual', {
+                product_id: variantId.replace('product_', ''),
+                storage_object_id: this.storageObjectId,
+                quantity: quantity,
+                unit_price: price,
+                unit: unit,
+                decimal_places: decimalPlaces,
+                _token: this.config.csrfToken
+            }).done((response) => {
+                if (response.success) {
+                    this.currentItems.push({
+                        variant_id: variantId,
+                        product_name: productName,
+                        variant_name: variantName,
+                        price: POSUtils.parsePrice(price),
+                        quantity: POSUtils.parseQuantity(quantity),
+                        total: POSUtils.parsePrice(price) * POSUtils.parseQuantity(quantity),
+                        unit: unit,
+                        decimal_places: decimalPlaces
+                    });
+                    this.saveCart().then(() => {
+                        this.cartUI.updateCartDisplay();
+                        this.cartUI.updateCartBadge();
+                        $('#searchInput').focus();
+                    });
+                } else {
+                    alert('Грешка: ' + response.message);
+                }
+            });
+            return;
+        }
+
         $.get(`/pos/stock?variant_id=${variantId}&storage_object_id=${this.storageObjectId}`)
             .done((stockData) => {
                 let existingItem = this.currentItems.find(item => item.variant_id === variantId);
                 let numericPrice = POSUtils.parsePrice(price);
+                let numericQuantity = POSUtils.parseQuantity(quantity);
 
                 if (existingItem) {
-                    let newQuantity = existingItem.quantity + 1;
+                    let newQuantity = existingItem.quantity + numericQuantity;
                     if (newQuantity > stockData.available) {
-                        alert('Няма достатъчна наличност! Оставащи: ' + stockData.available);
+                        alert('Няма достатъчна наличност! Оставащи: ' + stockData.available.toFixed(3));
                         return;
                     }
                     existingItem.quantity = newQuantity;
                     existingItem.total = existingItem.quantity * existingItem.price;
                 } else {
-                    if (1 > stockData.available) {
-                        alert('Няма наличност за този продукт!');
+                    if (numericQuantity > stockData.available) {
+                        alert('Няма достатъчна наличност! Оставащи: ' + stockData.available.toFixed(3));
                         return;
                     }
                     this.currentItems.push({
@@ -464,8 +679,10 @@ class POS {
                         product_name: productName,
                         variant_name: variantName,
                         price: numericPrice,
-                        quantity: 1,
-                        total: numericPrice,
+                        quantity: numericQuantity,
+                        total: numericPrice * numericQuantity,
+                        unit: unit,
+                        decimal_places: decimalPlaces
                     });
                 }
 
@@ -478,23 +695,19 @@ class POS {
     }
 
     attachEvents() {
-        // Продукти
         this.productsManager.attachProductClickEvents();
 
-        // Колички табове
         $(document).on('click', '.cart-tab', (e) => {
             this.loadCart($(e.currentTarget).data('cart-id'));
         });
 
-        // Елементи за търсене
         const $searchInput = $('#searchInput');
         const $clearBtn = $('#clearSearchBtn');
 
-        // Задържане на фокуса
-        $(document).on('click', function(e) {
+        $(document).on('click', function (e) {
             const target = $(e.target);
             const isInput = target.is('input, select, button') || target.closest('input, select, button').length;
-            const isInModal = target.closest('#paymentModal').length;
+            const isInModal = target.closest('#paymentModal').length || target.closest('#quantityModal').length;
             const isProductCard = target.closest('.product-card').length;
 
             if (!isInput && !isInModal && !isProductCard) {
@@ -502,8 +715,7 @@ class POS {
             }
         });
 
-        // Показване/скриване на бутона за изчистване
-        $searchInput.on('input', function() {
+        $searchInput.on('input', function () {
             if ($(this).val().length > 0) {
                 $clearBtn.removeClass('hidden');
             } else {
@@ -511,7 +723,6 @@ class POS {
             }
         });
 
-        // Изчистване на полето
         $clearBtn.on('click', () => {
             $searchInput.val('');
             $clearBtn.addClass('hidden');
@@ -519,7 +730,6 @@ class POS {
             this.productsManager.loadAllProducts();
         });
 
-        // Нова количка
         $('#newCartBtn').click(() => {
             $.ajax({
                 url: '/pos/cart/new',
@@ -535,7 +745,6 @@ class POS {
             });
         });
 
-        // Смяна на клиент
         $('#clientSelect').change(() => {
             $.ajax({
                 url: `/pos/cart/${this.currentCartId}`,
@@ -547,17 +756,14 @@ class POS {
             });
         });
 
-        // Бутон за плащане
         $('#checkoutBtn').click(() => this.paymentManager.openModal());
 
-        // Глобални функции за модала
         window.selectPaymentMethod = (method) => this.paymentManager.selectPaymentMethod(method);
         window.showCashPayment = () => this.paymentManager.showCashPayment();
         window.confirmCashPayment = () => this.paymentManager.confirmCashPayment();
         window.hideCashPayment = () => this.paymentManager.hideCashPayment();
         window.closePaymentModal = () => this.paymentManager.closeModal();
 
-        // Търсене на продукти
         let searchTimeout;
         $searchInput.on('input', (e) => {
             clearTimeout(searchTimeout);
@@ -573,7 +779,6 @@ class POS {
             }, 300);
         });
 
-        // Автоматично добавяне при Enter
         $searchInput.on('keypress', (e) => {
             if (e.which === 13) {
                 e.preventDefault();
@@ -593,5 +798,4 @@ class POS {
     }
 }
 
-// Глобална променлива
 window.POS = POS;

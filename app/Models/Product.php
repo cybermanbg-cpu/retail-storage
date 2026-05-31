@@ -9,8 +9,17 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Product extends Model
 {
     protected $fillable = [
-        'owner_id', 'name', 'sku', 'description', 'type',
-        'base_price', 'cost', 'vat_rate', 'has_variants', 'is_active'
+        'owner_id',
+        'name',
+        'sku',
+        'description',
+        'type',
+        'base_price',
+        'cost',
+        'vat_rate',
+        'has_variants',
+        'is_active',
+        'unit_of_measure_id',
     ];
 
     protected $casts = [
@@ -33,5 +42,34 @@ class Product extends Model
     public function barcodes(): HasMany
     {
         return $this->hasMany(ProductBarcode::class);
+    }
+
+    public function unitOfMeasure(): BelongsTo
+    {
+        return $this->belongsTo(UnitOfMeasure::class);
+    }
+
+    public function getQuantityWithUnitAttribute()
+    {
+        if ($this->unitOfMeasure) {
+            return number_format(0, $this->unitOfMeasure->decimal_places) . ' ' . $this->unitOfMeasure->symbol;
+        }
+        return '0 бр.';
+    }
+
+    /**
+     * Аксесор за символ на мерната единица
+     */
+    public function getUnitSymbolAttribute(): string
+    {
+        return $this->unitOfMeasure?->symbol ?? 'бр.';
+    }
+
+    /**
+     * Аксесор за десетични знаци на мерната единица
+     */
+    public function getUnitDecimalPlacesAttribute(): int
+    {
+        return $this->unitOfMeasure?->decimal_places ?? 0;
     }
 }

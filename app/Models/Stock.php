@@ -8,14 +8,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Stock extends Model
 {
     protected $fillable = [
-        'product_variant_id', 'storage_object_id', 'quantity',
-        'reserved_quantity', 'min_quantity'
+        'product_variant_id',
+        'storage_object_id',
+        'quantity',
+        'reserved_quantity',
+        'min_quantity'
     ];
 
     protected $casts = [
-        'quantity' => 'integer',
-        'reserved_quantity' => 'integer',
-        'min_quantity' => 'integer',
+        'quantity' => 'decimal:3',  // Промяна от 'integer'
+        'reserved_quantity' => 'decimal:3',
+        'min_quantity' => 'decimal:3',
     ];
 
     public function productVariant(): BelongsTo
