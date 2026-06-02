@@ -52,6 +52,7 @@ class ReceiptsTable
 
                 TextColumn::make('payment_method')
                     ->label('Плащане')
+                    ->badge()
                     ->formatStateUsing(fn(string $state): string => match ($state) {
                         'cash' => 'В брой',
                         'card' => 'Карта',
@@ -163,6 +164,11 @@ class ReceiptsTable
             ->groupingSettingsHidden(false)
             ->defaultSort('created_at', 'desc')    // Сортиране на записите вътре в групите
             ->recordActions([
+                Action::make('print')
+                    ->label('Печат')
+                    ->icon('heroicon-o-printer')
+                    ->color('gray')
+                    ->url(fn($record) => route('print.receipt', $record), shouldOpenInNewTab: true),
                 // ⭐ VIEW ACTION – всички могат да преглеждат ⭐
                 ViewAction::make()
                     ->label('Преглед')

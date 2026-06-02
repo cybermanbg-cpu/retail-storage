@@ -70,7 +70,7 @@
                                 <div class="text-sm {{ !$isCurrentMonth ? 'text-gray-400' : 'font-medium' }}">{{ $day->format('j') }}</div>
                                 @if($isCurrentMonth)
                                     <div class="text-xs {{ $total > 0 ? 'text-green-600 font-semibold' : 'text-gray-400' }}">
-                                        {{ number_format($total, 2) }} лв.
+                                        {{ number_format($total, 2) }} €
                                     </div>
                                 @endif
                             </td>
@@ -86,15 +86,15 @@
     <div class="mt-6 bg-white rounded-lg shadow p-4">
         <div class="flex justify-between items-center">
             <span class="font-semibold">Общ оборот за месеца:</span>
-            <span class="text-2xl font-bold text-green-600">{{ number_format($daily->sum('total'), 2) }} лв.</span>
+            <span class="text-2xl font-bold text-green-600">{{ number_format($daily->sum('total'), 2) }} €</span>
         </div>
         <div class="flex justify-between items-center mt-2 text-sm text-gray-600">
             <span>Среден дневен оборот:</span>
-            <span>{{ number_format($daily->sum('total') / max($daysInMonth, 1), 2) }} лв.</span>
+            <span>{{ number_format($daily->sum('total') / max($daysInMonth, 1), 2) }} €</span>
         </div>
         <div class="flex justify-between items-center mt-2 text-sm text-gray-600">
             <span>Най-висок дневен оборот:</span>
-            <span>{{ number_format($daily->max('total') ?? 0, 2) }} лв.</span>
+            <span>{{ number_format($daily->max('total') ?? 0, 2) }} €</span>
         </div>
     </div>
 </div>

@@ -2,17 +2,12 @@
 
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PosController;
+use App\Http\Controllers\PrintController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\StockController;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-*/
-
-// Публични маршрути (не изискват автентикация)
+// Публични маршрути
 Route::get('/login', function () {
     return redirect()->to('/admin/login');
 })->name('login');
@@ -22,20 +17,17 @@ Route::get('/logout', function () {
     return redirect('/');
 })->name('logout');
 
-// Начална страница (изисква автентикация)
+// Начална страница
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 // ========================================
 // POS МАРШРУТИ
 // ========================================
 Route::prefix('pos')->middleware(['auth'])->group(function () {
-    // Основни POS маршрути
     Route::get('/', [PosController::class, 'index'])->name('pos.index');
     Route::get('/search', [PosController::class, 'searchProducts'])->name('pos.search');
     Route::get('/stock', [PosController::class, 'getVariantStock'])->name('pos.stock');
     Route::post('/receipt', [PosController::class, 'createReceipt'])->name('pos.receipt');
-    
-    // Маршрути за активни колички
     Route::get('/carts', [PosController::class, 'getCarts'])->name('pos.carts');
     Route::post('/cart/new', [PosController::class, 'createNewCart'])->name('pos.cart.new');
     Route::get('/cart/{cartId}', [PosController::class, 'getCart'])->name('pos.cart.show');
@@ -43,9 +35,15 @@ Route::prefix('pos')->middleware(['auth'])->group(function () {
     Route::post('/cart/{cartId}/add', [PosController::class, 'addToCart'])->name('pos.cart.add');
     Route::delete('/cart/{cartId}/remove', [PosController::class, 'removeFromCart'])->name('pos.cart.remove');
     Route::delete('/cart/{cartId}', [PosController::class, 'deleteCart'])->name('pos.cart.delete');
-    
-    // ⭐ МАРШРУТ ЗА ВИРТУАЛНИ ВАРИАНТИ (продукти без варианти) ⭐
     Route::post('/add-to-cart-virtual', [PosController::class, 'addToCartVirtual'])->name('pos.cart.add-virtual');
+});
+
+// Restaurant POS маршрути
+Route::middleware(['auth'])->group(function () {
+    Route::get('/restaurant-pos', [PosController::class, 'restaurantPos'])->name('restaurant.pos');
+    Route::get('/pos/all-products', [PosController::class, 'allProducts']);
+    Route::get('/pos/products-by-category/{categoryId}', [PosController::class, 'productsByCategory'])->name('pos.products-by-category');
+    Route::post('/pos/restaurant-receipt', [PosController::class, 'restaurantReceipt'])->name('pos.restaurant-receipt');
 });
 
 // ========================================
@@ -57,11 +55,10 @@ Route::middleware(['auth'])->prefix('stocks')->group(function () {
     Route::get('/low', [StockController::class, 'lowStock'])->name('stocks.low');
 });
 
-// Публична проверка на наличност (за POS)
 Route::get('/stock/check', [StockController::class, 'check'])->name('stock.check');
 
 // ========================================
-// ДОКЛАДИ
+// ДОКЛАДИ (с middleware за ограничаване на касиерите)
 // ========================================
 Route::middleware(['auth', 'no.cashier'])->prefix('reports')->group(function () {
     Route::get('/', [ReportController::class, 'index'])->name('reports.index');
@@ -69,12 +66,10 @@ Route::middleware(['auth', 'no.cashier'])->prefix('reports')->group(function () 
     Route::get('/product-sales', [ReportController::class, 'productSales'])->name('reports.product-sales');
     Route::get('/client-sales', [ReportController::class, 'clientSales'])->name('reports.client-sales');
     Route::get('/cashier-sales', [ReportController::class, 'cashierSales'])->name('reports.cashier-sales');
+    Route::get('/staff-sales', [ReportController::class, 'staffSales'])->name('reports.staff-sales');
     Route::get('/monthly-sales', [ReportController::class, 'monthlySales'])->name('reports.monthly-sales');
     Route::get('/product-purchases', [ReportController::class, 'productPurchases'])->name('reports.product-purchases');
-    Route::get('/staff-sales', [ReportController::class, 'staffSales'])->name('reports.staff-sales');
     Route::get('/profit-analysis', [ReportController::class, 'profitAnalysis'])->name('reports.profit-analysis');
-
-    // Нови доклади
     Route::get('/stock-status', [ReportController::class, 'stockStatus'])->name('reports.stock-status');
     Route::get('/hourly-sales', [ReportController::class, 'hourlySales'])->name('reports.hourly-sales');
     Route::get('/top-products', [ReportController::class, 'topProducts'])->name('reports.top-products');
@@ -85,15 +80,13 @@ Route::middleware(['auth', 'no.cashier'])->prefix('reports')->group(function () 
     Route::get('/payment-methods', [ReportController::class, 'paymentMethods'])->name('reports.payment-methods');
 });
 
-// ========================================
-// ФИЛМЕНТ АДМИНИСТРАТИВЕН ПАНЕЛ
-// ========================================
-// Filament се зарежда автоматично на /admin
-// НЕ добавяйте маршрути, които започват с /admin, за да няма конфликти
+// Печатни форми
+Route::middleware(['auth'])->prefix('print')->group(function () {
+    Route::get('/receipt/{id}', [PrintController::class, 'printReceipt'])->name('print.receipt');
+    Route::get('/invoice/{id}', [PrintController::class, 'printInvoice'])->name('print.invoice');
+});
 
-// ========================================
-// FALLBACK (опционално)
-// ========================================
+// Fallback
 Route::fallback(function () {
     return redirect('/');
 });

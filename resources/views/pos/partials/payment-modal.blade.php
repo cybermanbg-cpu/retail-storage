@@ -5,7 +5,7 @@
 
             <div class="mb-4">
                 <p class="text-sm text-gray-600 mb-2">Обща сума за плащане:</p>
-                <p id="modalTotalAmount" class="text-2xl font-bold text-primary-600">0.00 лв.</p>
+                <p id="modalTotalAmount" class="text-2xl font-bold text-primary-600">0.00 €</p>
             </div>
 
             <div class="space-y-3">
@@ -33,7 +33,7 @@
                        onkeypress="handleCashAmountKeyPress(event)">
                 <div id="changeInfo" class="hidden mb-3 p-2 bg-green-100 rounded-lg">
                     <span class="text-sm">Ресто:</span>
-                    <span id="changeAmount" class="text-lg font-bold text-green-600">0.00 лв.</span>
+                    <span id="changeAmount" class="text-lg font-bold text-green-600">0.00 €</span>
                 </div>
                 <div class="flex space-x-2">
                     <button onclick="window.POSInstance.paymentManager.confirmCashPayment()" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg">

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Invoices\Tables;
 
+use Filament\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Grouping\Group;
@@ -158,6 +159,13 @@ class InvoicesTable
             ])
             ->defaultGroup('issue_date')
             ->groupingSettingsHidden(false)
-            ->defaultSort('created_at', 'desc');
+            ->defaultSort('created_at', 'desc')
+            ->recordActions([
+                Action::make('print')
+                    ->label('Печат')
+                    ->icon('heroicon-o-printer')
+                    ->color('gray')
+                    ->url(fn($record) => route('print.invoice', $record), shouldOpenInNewTab: true),
+            ]);
     }
 }

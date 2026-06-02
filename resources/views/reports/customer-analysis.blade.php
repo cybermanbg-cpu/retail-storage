@@ -19,13 +19,13 @@
         
         <div class="bg-white rounded-lg shadow p-6 text-center">
             <div class="text-3xl text-green-500 mb-2">💰</div>
-            <div class="text-2xl font-bold">{{ number_format($customers->sum('total_spent'), 2) }} лв.</div>
+            <div class="text-2xl font-bold">{{ number_format($customers->sum('total_spent'), 2) }} €</div>
             <div class="text-gray-600">Общ оборот</div>
         </div>
         
         <div class="bg-white rounded-lg shadow p-6 text-center">
             <div class="text-3xl text-purple-500 mb-2">📊</div>
-            <div class="text-2xl font-bold">{{ number_format($avgSpent, 2) }} лв.</div>
+            <div class="text-2xl font-bold">{{ number_format($avgSpent, 2) }} €</div>
             <div class="text-gray-600">Ср. оборот/клиент</div>
         </div>
         
@@ -67,8 +67,8 @@
                     <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $customer->name }}</td>
                     <td class="px-6 py-4 text-sm text-gray-600">{{ $customer->phone ?? '—' }}</td>
                     <td class="px-6 py-4 text-sm text-right">{{ number_format($receiptCount) }}</td>
-                    <td class="px-6 py-4 text-sm text-right font-semibold text-green-600">{{ number_format($totalSpent, 2) }} лв.</td>
-                    <td class="px-6 py-4 text-sm text-right">{{ number_format($avgOrder, 2) }} лв.</td>
+                    <td class="px-6 py-4 text-sm text-right font-semibold text-green-600">{{ number_format($totalSpent, 2) }} €</td>
+                    <td class="px-6 py-4 text-sm text-right">{{ number_format($avgOrder, 2) }} €</td>
                     <td class="px-6 py-4 text-sm text-center">
                         <span class="px-2 py-1 rounded-full text-xs {{ 
                             $segment == '⭐ Платинен' ? 'bg-purple-100 text-purple-800' : 

@@ -25,7 +25,7 @@
         
         <div class="bg-white rounded-lg shadow p-6 text-center">
             <div class="text-3xl text-orange-500 mb-2">💰</div>
-            <div class="text-2xl font-bold">{{ number_format($totalValue, 2) }} лв.</div>
+            <div class="text-2xl font-bold">{{ number_format($totalValue, 2) }} €</div>
             <div class="text-gray-600">Стойност за доставка</div>
         </div>
     </div>
@@ -63,8 +63,8 @@
                     <td class="px-6 py-4 text-sm text-right text-red-600 font-semibold">{{ number_format($stock->quantity, 3) }}</td>
                     <td class="px-6 py-4 text-sm text-right">{{ number_format($stock->min_quantity, 3) }}</td>
                     <td class="px-6 py-4 text-sm text-right font-semibold">{{ number_format($needed, 3) }}</td>
-                    <td class="px-6 py-4 text-sm text-right">{{ number_format($stock->average_cost, 2) }} лв.</td>
-                    <td class="px-6 py-4 text-sm text-right">{{ number_format($value, 2) }} лв.</td>
+                    <td class="px-6 py-4 text-sm text-right">{{ number_format($stock->average_cost, 2) }} €</td>
+                    <td class="px-6 py-4 text-sm text-right">{{ number_format($value, 2) }} €</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -80,7 +80,7 @@
                 <h3 class="font-semibold text-yellow-800">Препоръка за поръчка</h3>
                 <p class="text-sm text-yellow-700 mt-1">
                     Препоръчва се да направите поръчка за <strong>{{ $lowStocks->count() }}</strong> продукта на обща стойност 
-                    <strong>{{ number_format($totalValue, 2) }} лв.</strong>
+                    <strong>{{ number_format($totalValue, 2) }} €</strong>
                 </p>
                 <a href="{{ route('purchases.create') }}" class="inline-block mt-2 bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-yellow-700">
                     ➕ Направи поръчка

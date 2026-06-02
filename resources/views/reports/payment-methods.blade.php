@@ -36,7 +36,7 @@
         
         <div class="bg-white rounded-lg shadow p-6 text-center">
             <div class="text-3xl text-green-500 mb-2">💰</div>
-            <div class="text-2xl font-bold">{{ number_format($totalAmount, 2) }} лв.</div>
+            <div class="text-2xl font-bold">{{ number_format($totalAmount, 2) }} €</div>
             <div class="text-gray-600">Общ оборот</div>
         </div>
     </div>
@@ -69,7 +69,7 @@
             <div class="{{ $color }} px-4 py-2 text-white">{{ $label }}</div>
             <div class="p-4 text-center">
                 <div class="text-4xl mb-2">{{ $icon }}</div>
-                <div class="text-2xl font-bold">{{ number_format($method->total, 2) }} лв.</div>
+                <div class="text-2xl font-bold">{{ number_format($method->total, 2) }} €</div>
                 <div class="text-sm text-gray-600">{{ number_format($method->count) }} продажби</div>
                 <div class="mt-2 w-full bg-gray-200 rounded-full h-2">
                     <div class="{{ $color }} h-2 rounded-full" style="width: {{ $percent }}%"></div>
@@ -109,10 +109,10 @@
                     <td class="px-6 py-4 text-sm text-right">{{ number_format($method->count) }}
                         <span class="text-xs text-gray-400">({{ number_format($percentCount, 1) }}%)</span>
                     </td>
-                    <td class="px-6 py-4 text-sm text-right font-semibold text-green-600">{{ number_format($method->total, 2) }} лв.
+                    <td class="px-6 py-4 text-sm text-right font-semibold text-green-600">{{ number_format($method->total, 2) }} €
                         <span class="text-xs text-gray-400">({{ number_format($percentAmount, 1) }}%)</span>
                     </td>
-                    <td class="px-6 py-4 text-sm text-right">{{ number_format($method->count > 0 ? $method->total / $method->count : 0, 2) }} лв.</td>
+                    <td class="px-6 py-4 text-sm text-right">{{ number_format($method->count > 0 ? $method->total / $method->count : 0, 2) }} €</td>
                     <td class="px-6 py-4 text-sm text-right">
                         <div class="flex items-center justify-end gap-2">
                             <div class="w-24 bg-gray-200 rounded-full h-2">

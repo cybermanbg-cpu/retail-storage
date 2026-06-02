@@ -30,19 +30,19 @@
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div class="bg-white rounded-lg shadow p-6 text-center">
             <div class="text-3xl text-blue-500 mb-2">💰</div>
-            <div class="text-2xl font-bold text-gray-800">{{ number_format($totalRevenue, 2) }} лв.</div>
+            <div class="text-2xl font-bold text-gray-800">{{ number_format($totalRevenue, 2) }} €</div>
             <div class="text-gray-600">Общ приход</div>
         </div>
         
         <div class="bg-white rounded-lg shadow p-6 text-center">
             <div class="text-3xl text-orange-500 mb-2">📦</div>
-            <div class="text-2xl font-bold text-gray-800">{{ number_format($totalCOGS, 2) }} лв.</div>
+            <div class="text-2xl font-bold text-gray-800">{{ number_format($totalCOGS, 2) }} €</div>
             <div class="text-gray-600">Себестойност (COGS)</div>
         </div>
         
         <div class="bg-white rounded-lg shadow p-6 text-center">
             <div class="text-3xl text-green-500 mb-2">📈</div>
-            <div class="text-2xl font-bold text-green-600">{{ number_format($totalProfit, 2) }} лв.</div>
+            <div class="text-2xl font-bold text-green-600">{{ number_format($totalProfit, 2) }} €</div>
             <div class="text-gray-600">Печалба</div>
         </div>
         
@@ -85,9 +85,9 @@
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $product['product_name'] }}</td>
                             <td class="px-6 py-4 text-sm text-right">{{ number_format($product['quantity'], 2) }}</td>
-                            <td class="px-6 py-4 text-sm text-right text-green-600">{{ number_format($product['revenue'], 2) }} лв.</td>
-                            <td class="px-6 py-4 text-sm text-right text-orange-600">{{ number_format($product['cogs'], 2) }} лв.</td>
-                            <td class="px-6 py-4 text-sm text-right font-semibold text-blue-600">{{ number_format($product['profit'], 2) }} лв.</td>
+                            <td class="px-6 py-4 text-sm text-right text-green-600">{{ number_format($product['revenue'], 2) }} €</td>
+                            <td class="px-6 py-4 text-sm text-right text-orange-600">{{ number_format($product['cogs'], 2) }} €</td>
+                            <td class="px-6 py-4 text-sm text-right font-semibold text-blue-600">{{ number_format($product['profit'], 2) }} €</td>
                             <td class="px-6 py-4 text-sm text-right">
                                 <span class="px-2 py-1 rounded-full text-xs {{ $product['margin_percent'] >= 20 ? 'bg-green-100 text-green-800' : ($product['margin_percent'] >= 10 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
                                     {{ number_format($product['margin_percent'], 1) }}%
@@ -100,9 +100,9 @@
                         <tr>
                             <td class="px-6 py-3 text-sm font-bold text-gray-900">ОБЩО:</td>
                             <td class="px-6 py-3 text-sm font-bold text-right">{{ number_format($productSummary->sum('quantity'), 2) }}</td>
-                            <td class="px-6 py-3 text-sm font-bold text-right text-green-700">{{ number_format($totalRevenue, 2) }} лв.</td>
-                            <td class="px-6 py-3 text-sm font-bold text-right text-orange-700">{{ number_format($totalCOGS, 2) }} лв.</td>
-                            <td class="px-6 py-3 text-sm font-bold text-right text-blue-700">{{ number_format($totalProfit, 2) }} лв.</td>
+                            <td class="px-6 py-3 text-sm font-bold text-right text-green-700">{{ number_format($totalRevenue, 2) }} €</td>
+                            <td class="px-6 py-3 text-sm font-bold text-right text-orange-700">{{ number_format($totalCOGS, 2) }} €</td>
+                            <td class="px-6 py-3 text-sm font-bold text-right text-blue-700">{{ number_format($totalProfit, 2) }} €</td>
                             <td class="px-6 py-3 text-sm font-bold text-right">{{ $totalRevenue > 0 ? number_format(($totalProfit / $totalRevenue) * 100, 1) : 0 }}%</td>
                         </tr>
                     </tfoot>
@@ -136,10 +136,10 @@
                             <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $item['product_name'] }}</td>
                             <td class="px-6 py-4 text-sm text-gray-500">{{ $item['variant'] }}</td>
                             <td class="px-6 py-4 text-sm text-right">{{ number_format($item['quantity'], 2) }} {{ $item['unit'] }}</td>
-                            <td class="px-6 py-4 text-sm text-right">{{ number_format($item['selling_price'], 2) }} лв.</td>
-                            <td class="px-6 py-4 text-sm text-right text-green-600">{{ number_format($item['revenue'], 2) }} лв.</td>
-                            <td class="px-6 py-4 text-sm text-right text-orange-600">{{ number_format($item['cogs'], 2) }} лв.</td>
-                            <td class="px-6 py-4 text-sm text-right font-semibold text-blue-600">{{ number_format($item['profit'], 2) }} лв.</td>
+                            <td class="px-6 py-4 text-sm text-right">{{ number_format($item['selling_price'], 2) }} €</td>
+                            <td class="px-6 py-4 text-sm text-right text-green-600">{{ number_format($item['revenue'], 2) }} €</td>
+                            <td class="px-6 py-4 text-sm text-right text-orange-600">{{ number_format($item['cogs'], 2) }} €</td>
+                            <td class="px-6 py-4 text-sm text-right font-semibold text-blue-600">{{ number_format($item['profit'], 2) }} €</td>
                             <td class="px-6 py-4 text-sm text-right">
                                 <span class="px-2 py-1 rounded-full text-xs {{ $item['margin_percent'] >= 20 ? 'bg-green-100 text-green-800' : ($item['margin_percent'] >= 10 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
                                     {{ number_format($item['margin_percent'], 1) }}%
@@ -151,9 +151,9 @@
                     <tfoot class="bg-gray-100">
                         <tr>
                             <td colspan="6" class="px-6 py-3 text-sm font-bold text-gray-900">ОБЩО:</td>
-                            <td class="px-6 py-3 text-sm font-bold text-right text-green-700">{{ number_format($totalRevenue, 2) }} лв.</td>
-                            <td class="px-6 py-3 text-sm font-bold text-right text-orange-700">{{ number_format($totalCOGS, 2) }} лв.</td>
-                            <td class="px-6 py-3 text-sm font-bold text-right text-blue-700">{{ number_format($totalProfit, 2) }} лв.</td>
+                            <td class="px-6 py-3 text-sm font-bold text-right text-green-700">{{ number_format($totalRevenue, 2) }} €</td>
+                            <td class="px-6 py-3 text-sm font-bold text-right text-orange-700">{{ number_format($totalCOGS, 2) }} €</td>
+                            <td class="px-6 py-3 text-sm font-bold text-right text-blue-700">{{ number_format($totalProfit, 2) }} €</td>
                             <td class="px-6 py-3 text-sm font-bold text-right">{{ $totalRevenue > 0 ? number_format(($totalProfit / $totalRevenue) * 100, 1) : 0 }}%</td>
                         </tr>
                     </tfoot>

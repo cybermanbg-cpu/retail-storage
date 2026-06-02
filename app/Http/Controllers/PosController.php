@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Helpers\CartHelper;
 use App\Http\Controllers\Controller;
 use App\Models\ActiveCart;
+use App\Models\Category;
 use App\Models\Client;
+use App\Models\Owner;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Receipt;
@@ -320,5 +322,179 @@ class PosController extends Controller
                 'message' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Restaurant POS изглед
+     */
+    public function restaurantPos()
+    {
+        $categories = Category::where('is_active', true)
+            ->where('owner_id', $this->getCurrentOwnerId())
+            ->orderBy('sort_order')
+            ->get();
+
+        $clients = Client::where('is_active', true)->get();
+        $storageObject = StorageObject::first();
+
+        return view('pos.restaurant', compact('categories', 'clients', 'storageObject'));
+    }
+
+    /**
+     * Продукти по категория (за Restaurant POS)
+     */
+    public function productsByCategory($categoryId)
+    {
+        $category = Category::with('products')->findOrFail($categoryId);
+
+        $products = $category->products->map(function ($product) {
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'base_price' => $product->base_price,
+                'discounted_price' => $product->discounted_price,
+                'discount_percent' => $product->categories->max('default_discount'),
+            ];
+        });
+
+        return response()->json($products);
+    }
+
+    /**
+     * Създаване на разписка за Restaurant POS
+     */
+    public function restaurantReceipt(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+
+            $data = $request->validate([
+                'client_id' => 'nullable|exists:clients,id',
+                'storage_object_id' => 'required|exists:storage_objects,id',
+                'items' => 'required|array',
+                'items.*.product_id' => 'required|exists:products,id',
+                'items.*.quantity' => 'required|numeric|min:0.001',
+                'items.*.price' => 'required|numeric|min:0',
+            ]);
+
+            // Намери активна количка или създай нова
+            $activeCarts = $this->cartService->getActiveCarts();
+            $cart = $activeCarts->first();
+
+            if (!$cart) {
+                $cart = $this->cartService->createCart($data['storage_object_id']);
+            }
+
+            $receiptNumber = 'R-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
+
+            $totalAmount = 0;
+            $totalVat = 0;
+
+            foreach ($data['items'] as $item) {
+                $product = Product::find($item['product_id']);
+                $price = $item['price'];
+                $quantity = $item['quantity'];
+                $vatRate = $product->vat_rate;
+                $vatAmount = ($price * $vatRate / 100) * $quantity;
+
+                $totalAmount += $price * $quantity;
+                $totalVat += $vatAmount;
+            }
+
+            $receipt = Receipt::create([
+                'owner_id' => $this->getCurrentOwnerId(),
+                'storage_object_id' => $data['storage_object_id'],
+                'client_id' => $data['client_id'] ?? null,
+                'user_id' => Auth::id(),
+                'receipt_number' => $receiptNumber,
+                'type' => 'sale',
+                'total_amount' => $totalAmount,
+                'total_vat' => $totalVat,
+                'notes' => null,
+                'is_invoiced' => false,
+            ]);
+
+            // Запис на артикулите (опростено за restaurant POS)
+            foreach ($data['items'] as $item) {
+                $product = Product::find($item['product_id']);
+
+                ReceiptItem::create([
+                    'receipt_id' => $receipt->id,
+                    'product_variant_id' => null,
+                    'product_name_snapshot' => $product->name,
+                    'sku_snapshot' => $product->sku,
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['price'],
+                    'vat_rate' => $product->vat_rate,
+                    'total' => $item['price'] * $item['quantity'],
+                    'unit_of_measure_snapshot' => $product->unitOfMeasure?->symbol ?? 'бр.',
+                    'decimal_places_snapshot' => $product->unitOfMeasure?->decimal_places ?? 0,
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'receipt' => $receipt,
+                'receipt_number' => $receiptNumber,
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Взема текущия собственик на логнатия потребител
+     */
+    private function getCurrentOwnerId(): int
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            $owner = Owner::first();
+            return $owner?->id ?? 1;
+        }
+
+        if ($user->hasRole('super_admin')) {
+            $owner = Owner::first();
+            return $owner?->id ?? 1;
+        }
+
+        if ($user->owner_id) {
+            return $user->owner_id;
+        }
+
+        if (session()->has('current_owner_id')) {
+            return session()->get('current_owner_id');
+        }
+
+        $owner = Owner::first();
+        return $owner?->id ?? 1;
+    }
+
+    public function allProducts()
+    {
+        $products = Product::where('type', 'product')
+            ->where('is_active', true)
+            ->where('owner_id', $this->getCurrentOwnerId())
+            ->get()
+            ->map(function ($product) {
+                $maxDiscount = $product->categories->max('default_discount');
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'base_price' => $product->base_price,
+                    'discounted_price' => round($product->base_price - ($product->base_price * $maxDiscount / 100), 2),
+                    'discount_percent' => $maxDiscount,
+                ];
+            });
+
+        return response()->json($products);
     }
 }

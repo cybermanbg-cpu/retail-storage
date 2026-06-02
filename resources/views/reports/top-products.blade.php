@@ -35,7 +35,7 @@
                 <div class="text-4xl mb-2">{{ $index == 0 ? '🥇' : ($index == 1 ? '🥈' : '🥉') }}</div>
                 <div class="font-bold text-lg">{{ $product->product_name_snapshot }}</div>
                 <div class="text-sm opacity-90">{{ number_format($product->total_quantity, 2) }} бр.</div>
-                <div class="text-xl font-bold">{{ number_format($product->total_revenue, 2) }} лв.</div>
+                <div class="text-xl font-bold">{{ number_format($product->total_revenue, 2) }} €</div>
             </div>
             @endforeach
         </div>
@@ -63,7 +63,7 @@
                     <td class="px-6 py-4 text-sm text-gray-500">{{ $index + 1 }}</td>
                     <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $product->product_name_snapshot }}</td>
                     <td class="px-6 py-4 text-sm text-right">{{ number_format($product->total_quantity, 2) }}</td>
-                    <td class="px-6 py-4 text-sm text-right font-semibold text-green-600">{{ number_format($product->total_revenue, 2) }} лв.</td>
+                    <td class="px-6 py-4 text-sm text-right font-semibold text-green-600">{{ number_format($product->total_revenue, 2) }} €</td>
                     <td class="px-6 py-4 text-sm text-right">
                         <div class="flex items-center justify-end gap-2">
                             <div class="w-24 bg-gray-200 rounded-full h-2">
@@ -79,7 +79,7 @@
                 <tr>
                     <td colspan="2" class="px-6 py-3 text-sm font-bold text-gray-900">ОБЩО:</td>
                     <td class="px-6 py-3 text-sm font-bold text-right">{{ number_format($totalQuantity, 2) }}</td>
-                    <td class="px-6 py-3 text-sm font-bold text-right text-green-700">{{ number_format($totalRevenue, 2) }} лв.</td>
+                    <td class="px-6 py-3 text-sm font-bold text-right text-green-700">{{ number_format($totalRevenue, 2) }} €</td>
                     <td class="px-6 py-3 text-sm font-bold text-right">100%</td>
                 </tr>
             </tfoot>

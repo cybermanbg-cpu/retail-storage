@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Product extends Model
@@ -71,5 +72,25 @@ class Product extends Model
     public function getUnitDecimalPlacesAttribute(): int
     {
         return $this->unitOfMeasure?->decimal_places ?? 0;
+    }
+
+    public function categories(): BelongsToMany
+    {
+        return $this->belongsToMany(Category::class, 'category_product');
+    }
+
+    // Взема крайната цена с отстъпка от категорията
+    public function getDiscountedPriceAttribute(): float
+    {
+        $price = $this->base_price;
+        $maxDiscount = 0;
+
+        foreach ($this->categories as $category) {
+            if ($category->default_discount > $maxDiscount) {
+                $maxDiscount = $category->default_discount;
+            }
+        }
+
+        return $price - ($price * $maxDiscount / 100);
     }
 }

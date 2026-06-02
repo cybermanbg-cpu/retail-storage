@@ -37,7 +37,7 @@
         
         <div class="bg-white rounded-lg shadow p-6 text-center">
             <div class="text-3xl text-green-500 mb-2">💰</div>
-            <div class="text-2xl font-bold">{{ number_format($totalValue, 2) }} лв.</div>
+            <div class="text-2xl font-bold">{{ number_format($totalValue, 2) }} €</div>
             <div class="text-gray-600">Стойност на наличността</div>
         </div>
         
@@ -76,8 +76,8 @@
                     <td class="px-6 py-4 text-sm text-gray-600">{{ $stock->storageObject->name }}</td>
                     <td class="px-6 py-4 text-sm text-right font-semibold">{{ number_format($stock->quantity, 3) }}</td>
                     <td class="px-6 py-4 text-sm text-right">{{ number_format($stock->min_quantity, 3) }}</td>
-                    <td class="px-6 py-4 text-sm text-right">{{ number_format($stock->average_cost, 2) }} лв.</td>
-                    <td class="px-6 py-4 text-sm text-right">{{ number_format($stock->quantity * $stock->average_cost, 2) }} лв.</td>
+                    <td class="px-6 py-4 text-sm text-right">{{ number_format($stock->average_cost, 2) }} €</td>
+                    <td class="px-6 py-4 text-sm text-right">{{ number_format($stock->quantity * $stock->average_cost, 2) }} €</td>
                     <td class="px-6 py-4 text-sm text-center">
                         @if($stock->quantity <= 0)
                             <span class="px-2 py-1 rounded-full text-xs bg-red-100 text-red-800">✗ Няма</span>

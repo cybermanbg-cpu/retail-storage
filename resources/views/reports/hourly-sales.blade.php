@@ -32,7 +32,7 @@
         
         <div class="bg-white rounded-lg shadow p-6 text-center">
             <div class="text-3xl text-green-500 mb-2">💰</div>
-            <div class="text-2xl font-bold">{{ number_format($sales->sum('total'), 2) }} лв.</div>
+            <div class="text-2xl font-bold">{{ number_format($sales->sum('total'), 2) }} €</div>
             <div class="text-gray-600">Общ оборот</div>
         </div>
     </div>
@@ -58,8 +58,8 @@
                 <tr class="hover:bg-gray-50">
                     <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ sprintf('%02d:00 - %02d:59', $hour, $hour) }}</td>
                     <td class="px-6 py-4 text-sm text-right">{{ number_format($data['receipts'] ?? 0) }}</td>
-                    <td class="px-6 py-4 text-sm text-right {{ ($data['total'] ?? 0) > 0 ? 'font-semibold text-green-600' : '' }}">{{ number_format($data['total'] ?? 0, 2) }} лв.</td>
-                    <td class="px-6 py-4 text-sm text-right">{{ number_format(($data['total'] ?? 0) / (($data['receipts'] ?? 0) ?: 1), 2) }} лв.</td>
+                    <td class="px-6 py-4 text-sm text-right {{ ($data['total'] ?? 0) > 0 ? 'font-semibold text-green-600' : '' }}">{{ number_format($data['total'] ?? 0, 2) }} €</td>
+                    <td class="px-6 py-4 text-sm text-right">{{ number_format(($data['total'] ?? 0) / (($data['receipts'] ?? 0) ?: 1), 2) }} €</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -67,8 +67,8 @@
                 <tr>
                     <td class="px-6 py-3 text-sm font-bold text-gray-900">ОБЩО:</td>
                     <td class="px-6 py-3 text-sm font-bold text-right">{{ number_format($sales->sum('receipts')) }}</td>
-                    <td class="px-6 py-3 text-sm font-bold text-right text-green-700">{{ number_format($sales->sum('total'), 2) }} лв.</td>
-                    <td class="px-6 py-3 text-sm font-bold text-right">{{ number_format($sales->sum('total') / max($sales->sum('receipts'), 1), 2) }} лв.</td>
+                    <td class="px-6 py-3 text-sm font-bold text-right text-green-700">{{ number_format($sales->sum('total'), 2) }} €</td>
+                    <td class="px-6 py-3 text-sm font-bold text-right">{{ number_format($sales->sum('total') / max($sales->sum('receipts'), 1), 2) }} €</td>
                 </tr>
             </tfoot>
         </table>
