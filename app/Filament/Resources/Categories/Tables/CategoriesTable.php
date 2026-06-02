@@ -19,6 +19,7 @@ class CategoriesTable
                 TextColumn::make('slug')->label('Слаг'),
                 TextColumn::make('default_discount')->label('Отстъпка')->suffix('%'),
                 IconColumn::make('is_active')->label('Активна')->boolean(),
+                IconColumn::make('show_in_restaurant_pos')->label('Показване в POS')->boolean(),
             ])
             ->filters([
                 //
