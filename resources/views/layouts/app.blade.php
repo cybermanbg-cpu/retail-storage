@@ -40,6 +40,10 @@
                     <a href="{{ route('pos.index') }}" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
                         <i class="fas fa-cash-register mr-1"></i> POS
                     </a>
+                    <!-- ⭐ НОВ ЛИНК КЪМ ДОКЛАДИ ⭐ -->
+                    <a href="{{ route('reports.index') }}" class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition">
+                        <i class="fas fa-chart-line mr-1"></i> Доклади
+                    </a>
                     <a href="{{ url('/admin') }}" class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition">
                         <i class="fas fa-chalkboard-user mr-1"></i> Админ
                     </a>
@@ -70,6 +74,10 @@
                 <a href="{{ route('pos.index') }}" class="block px-3 py-2 rounded-md text-base font-medium text-white bg-green-500 hover:bg-green-600">
                     <i class="fas fa-cash-register mr-2"></i> POS
                 </a>
+                <!-- ⭐ МОБИЛЕН ЛИНК КЪМ ДОКЛАДИ ⭐ -->
+                <a href="{{ route('reports.index') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50">
+                    <i class="fas fa-chart-line mr-2"></i> Доклади
+                </a>
                 <a href="{{ url('/admin') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50">
                     <i class="fas fa-chalkboard-user mr-2"></i> Админ
                 </a>
@@ -97,6 +105,7 @@
                         <ul class="space-y-2 text-sm">
                             <li><a href="{{ route('home') }}" class="text-gray-400 hover:text-white transition">Начало</a></li>
                             <li><a href="{{ route('pos.index') }}" class="text-gray-400 hover:text-white transition">POS Система</a></li>
+                            <li><a href="{{ route('reports.index') }}" class="text-gray-400 hover:text-white transition">Доклади</a></li>
                             <li><a href="{{ url('/admin') }}" class="text-gray-400 hover:text-white transition">Администрация</a></li>
                         </ul>
                     </div>

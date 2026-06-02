@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PosController;
-use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\StockController;
 use Illuminate\Support\Facades\Route;
 
@@ -59,6 +59,25 @@ Route::middleware(['auth'])->prefix('stocks')->group(function () {
 
 // Публична проверка на наличност (за POS)
 Route::get('/stock/check', [StockController::class, 'check'])->name('stock.check');
+
+// ========================================
+// ДОКЛАДИ
+// ========================================
+Route::middleware(['auth', 'no.cashier'])->prefix('reports')->group(function () {
+    Route::get('/', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/dashboard', [ReportController::class, 'dashboard'])->name('reports.dashboard');
+    Route::get('/product-sales', [ReportController::class, 'productSales'])->name('reports.product-sales');
+    Route::get('/client-sales', [ReportController::class, 'clientSales'])->name('reports.client-sales');
+    Route::get('/cashier-sales', [ReportController::class, 'cashierSales'])->name('reports.cashier-sales');
+    Route::get('/monthly-sales', [ReportController::class, 'monthlySales'])->name('reports.monthly-sales');
+    Route::get('/product-purchases', [ReportController::class, 'productPurchases'])->name('reports.product-purchases');
+});
+
+// ========================================
+// ФИЛМЕНТ АДМИНИСТРАТИВЕН ПАНЕЛ
+// ========================================
+// Filament се зарежда автоматично на /admin
+// НЕ добавяйте маршрути, които започват с /admin, за да няма конфликти
 
 // ========================================
 // FALLBACK (опционално)
