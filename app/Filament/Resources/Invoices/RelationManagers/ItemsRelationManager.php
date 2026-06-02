@@ -45,7 +45,7 @@ class ItemsRelationManager extends RelationManager
                     ->summarize([
                         \Filament\Tables\Columns\Summarizers\Sum::make()
                             ->label('Общо:')
-                            ->money('€'),
+                            ->money('euro'),
                     ]),
             ]);
     }

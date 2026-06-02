@@ -6,6 +6,7 @@ use App\Models\ActiveCart;
 use App\Models\Owner;
 use App\Models\Product;
 use App\Models\Receipt;
+use App\Models\Stock;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -37,11 +38,43 @@ class HomeController extends Controller
             ->where('type', 'product')
             ->count();
         
+        $totalClients = \App\Models\Client::where('owner_id', $ownerId)->count();
+        
         $todaySales = Receipt::where('owner_id', $ownerId)
             ->whereDate('created_at', today())
             ->sum('total_amount');
         
         $totalSales = Receipt::where('owner_id', $ownerId)->sum('total_amount');
+        
+        // ========================================
+        // ОБОРОТ ЗА ВЧЕРА (за сравнение)
+        // ========================================
+        
+        $yesterdaySales = Receipt::where('owner_id', $ownerId)
+            ->whereDate('created_at', today()->subDay())
+            ->sum('total_amount');
+        
+        $todayGrowth = $yesterdaySales > 0 
+            ? (($todaySales - $yesterdaySales) / $yesterdaySales) * 100 
+            : ($todaySales > 0 ? 100 : 0);
+        
+        // ========================================
+        // МЕСЕЧЕН ОБОРОТ
+        // ========================================
+        
+        $monthSales = Receipt::where('owner_id', $ownerId)
+            ->whereYear('created_at', now()->year)
+            ->whereMonth('created_at', now()->month)
+            ->sum('total_amount');
+        
+        $lastMonthSales = Receipt::where('owner_id', $ownerId)
+            ->whereYear('created_at', now()->subMonth()->year)
+            ->whereMonth('created_at', now()->subMonth()->month)
+            ->sum('total_amount');
+        
+        $monthGrowth = $lastMonthSales > 0 
+            ? (($monthSales - $lastMonthSales) / $lastMonthSales) * 100 
+            : ($monthSales > 0 ? 100 : 0);
         
         // ========================================
         // ПЕРСОНАЛЕН ОБОРОТ НА ЛОГНАТИЯ КАСИЕР
@@ -72,6 +105,31 @@ class HomeController extends Controller
             ->count();
         
         // ========================================
+        // АКТИВНИ КАСИЕРИ
+        // ========================================
+        
+        $activeCashiers = User::role('cashier')
+            ->where('owner_id', $ownerId)
+            ->whereHas('receipts', function ($q) {
+                $q->whereMonth('created_at', now()->month)
+                    ->where('type', 'sale');
+            })
+            ->count();
+        
+        // ========================================
+        // ТОП КАСИЕР ЗА МЕСЕЦА
+        // ========================================
+        
+        $topCashierOfMonth = User::role('cashier')
+            ->where('owner_id', $ownerId)
+            ->withSum(['receipts as monthly_revenue' => function ($q) {
+                $q->whereMonth('created_at', now()->month)
+                    ->where('type', 'sale');
+            }], 'total_amount')
+            ->orderByDesc('monthly_revenue')
+            ->first();
+        
+        // ========================================
         // ОБОРОТИ ПО КАСИЕРИ ЗА ДЕНЯ (само за admin/owner)
         // ========================================
         
@@ -79,7 +137,6 @@ class HomeController extends Controller
         $cashierTurnovers = collect();
         
         if ($isAdmin) {
-            // Обороти по касиери за днешния ден
             $cashierTurnovers = User::where('owner_id', $ownerId)
                 ->whereHas('roles', function ($q) {
                     $q->where('name', 'cashier');
@@ -129,11 +186,53 @@ class HomeController extends Controller
         }
         
         // ========================================
-        // ДРУГИ СТАТИСТИКИ
+        // ТОП 5 ПРОДУКТА ЗА МЕСЕЦА
         // ========================================
         
-        // Проверка дали потребителят има роля
-        $isAdmin = $user->hasRole('super_admin') || $user->hasRole('owner');
+        $topProducts = DB::table('receipt_items')
+            ->join('receipts', 'receipt_items.receipt_id', '=', 'receipts.id')
+            ->join('product_variants', 'receipt_items.product_variant_id', '=', 'product_variants.id')
+            ->join('products', 'product_variants.product_id', '=', 'products.id')
+            ->where('receipts.type', 'sale')
+            ->where('receipts.owner_id', $ownerId)
+            ->whereMonth('receipts.created_at', now()->month)
+            ->select(
+                'products.name as product_name',
+                DB::raw('SUM(receipt_items.quantity) as total_quantity'),
+                DB::raw('SUM(receipt_items.total) as total_revenue')
+            )
+            ->groupBy('products.id', 'products.name')
+            ->orderByDesc('total_revenue')
+            ->limit(5)
+            ->get();
+        
+        // ========================================
+        // ПРОДУКТИ С НИСЪК ЗАПАС
+        // ========================================
+        
+        $lowStockProducts = Stock::whereHas('productVariant.product', function ($q) use ($ownerId) {
+                $q->where('owner_id', $ownerId);
+            })
+            ->whereRaw('quantity <= min_quantity')
+            ->where('quantity', '>', 0)
+            ->with(['productVariant.product', 'storageObject'])
+            ->limit(10)
+            ->get();
+        
+        // ========================================
+        // ПОСЛЕДНИ ПРОДАЖБИ
+        // ========================================
+        
+        $recentSales = Receipt::where('owner_id', $ownerId)
+            ->where('type', 'sale')
+            ->with(['client', 'user', 'storageObject'])
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get();
+        
+        // ========================================
+        // ДРУГИ СТАТИСТИКИ
+        // ========================================
         
         // Незавършени продажби за текущия обект/касиер
         $incompleteSales = ActiveCart::where('owner_id', $ownerId)
@@ -158,9 +257,13 @@ class HomeController extends Controller
             ->get();
         
         return view('home', compact(
-            'totalProducts', 
-            'todaySales', 
-            'totalSales', 
+            'totalProducts',
+            'totalClients',
+            'todaySales',
+            'totalSales',
+            'todayGrowth',
+            'monthSales',
+            'monthGrowth',
             'incompleteSales',
             'latestProducts',
             'activeCarts',
@@ -171,7 +274,12 @@ class HomeController extends Controller
             'myTodaySalesCount',
             'cashierTurnovers',
             'topCashiers',
-            'isAdmin'
+            'isAdmin',
+            'activeCashiers',
+            'topCashierOfMonth',
+            'topProducts',
+            'lowStockProducts',
+            'recentSales'
         ));
     }
     

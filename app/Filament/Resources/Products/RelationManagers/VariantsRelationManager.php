@@ -59,7 +59,6 @@ class VariantsRelationManager extends RelationManager
         $user = Auth::user();
         if (!$user) return false;
         
-        // Касиерът НЕ може да създава варианти
         if ($user->hasRole('cashier')) {
             return false;
         }
@@ -77,7 +76,6 @@ class VariantsRelationManager extends RelationManager
         $user = Auth::user();
         if (!$user) return false;
         
-        // Касиерът НЕ може да редактира варианти
         if ($user->hasRole('cashier')) {
             return false;
         }
@@ -95,12 +93,10 @@ class VariantsRelationManager extends RelationManager
         $user = Auth::user();
         if (!$user) return false;
         
-        // Касиерът НЕ може да изтрива варианти
         if ($user->hasRole('cashier')) {
             return false;
         }
         
-        // Мениджърът НЕ може да изтрива варианти
         if ($user->hasRole('manager')) {
             return false;
         }
@@ -165,18 +161,21 @@ class VariantsRelationManager extends RelationManager
                     ->label('Пълен SKU')
                     ->state(fn($record) => $record->full_sku),
 
+                // ⭐ ЦЕНА НА ВАРИАНТА – изчислена на място ⭐
                 TextColumn::make('final_price')
                     ->label('Цена')
-                    ->money('€')
-                    ->state(fn($record) => $record->final_price),
+                    ->money('euro')
+                    ->getStateUsing(function ($record) {
+                        $basePrice = $record->product->base_price ?? 0;
+                        $adjustment = $record->price_adjustment ?? 0;
+                        return $basePrice + $adjustment;
+                    }),
 
                 IconColumn::make('is_active')
                     ->label('Активен')
                     ->boolean(),
             ])
-            ->filters([
-                //
-            ])
+            ->filters([])
             ->headerActions([
                 CreateAction::make(),
             ])

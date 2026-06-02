@@ -52,7 +52,12 @@ class ReceiptsTable
 
                 TextColumn::make('payment_method')
                     ->label('Плащане')
-                    ->badge()
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'cash' => 'В брой',
+                        'card' => 'Карта',
+                        'bank_transfer' => 'Банков превод',
+                        default => $state ?? '—',
+                    })
                     ->color(fn(string $state): string => match ($state) {
                         'cash' => 'success',
                         'card' => 'info',
