@@ -17,6 +17,11 @@ class PurchasesTable
     {
         return $table
             ->columns([
+                TextColumn::make('id')
+                    ->label('ID')
+                    ->searchable()
+                    ->sortable(),
+
                 TextColumn::make('purchase_number')
                     ->label('Номер')
                     ->searchable()
@@ -85,10 +90,17 @@ class PurchasesTable
                         'completed' => 'Завършена',
                         'cancelled' => 'Анулирана',
                     ]),
-            ])
+            ])->defaultSort('created_at', 'desc')
             ->recordActions([
-                EditAction::make()
-                    ->visible(fn($record) => $record->status === 'draft'),
+                // Редактиране - достъпно за чернова или за админ при завършена
+                // EditAction::make()
+                //     ->visible(fn($record) => 
+                //         $record->status === 'draft' || 
+                //         ($record->status === 'completed' && 
+                //          (Auth::user()->hasRole('super_admin') || 
+                //           Auth::user()->hasRole('owner') || 
+                //           Auth::user()->hasRole('admin')))
+                //     ),
                 
                 Action::make('complete')
                     ->label('Завърши')
@@ -125,6 +137,31 @@ class PurchasesTable
                         
                         \Filament\Notifications\Notification::make()
                             ->title('Покупката е анулирана')
+                            ->warning()
+                            ->send();
+                    }),
+                    
+                // Добавяме опция за връщане в чернова (само за админ)
+                Action::make('revert_to_draft')
+                    ->label('Върни в чернова')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('warning')
+                    ->visible(fn($record) => 
+                        $record->status === 'completed' && 
+                        (Auth::user()->hasRole('super_admin') || 
+                         Auth::user()->hasRole('owner') || 
+                         Auth::user()->hasRole('admin'))
+                    )
+                    ->requiresConfirmation()
+                    ->modalHeading('Връщане в чернова')
+                    ->modalDescription('Внимание! Това действие ще върне покупката в статус "чернова" и ще трябва да актуализирате наличността ръчно. Сигурни ли сте?')
+                    ->modalSubmitActionLabel('Да, върни')
+                    ->action(function ($record) {
+                        $record->status = 'draft';
+                        $record->save();
+                        
+                        \Filament\Notifications\Notification::make()
+                            ->title('Покупката е върната в чернова')
                             ->warning()
                             ->send();
                     }),

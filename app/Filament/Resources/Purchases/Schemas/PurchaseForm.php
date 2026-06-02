@@ -21,271 +21,327 @@ class PurchaseForm
     {
         return $schema
             ->components([
-                Section::make('Основни данни')
+                Section::make('Данни')
                     ->schema([
-                        Hidden::make('user_id')->default(fn() => Auth::id()),
-                        Hidden::make('owner_id')->default(fn() => Auth::user()->owner_id ?? 1),
-
-                        Select::make('storage_object_id')
-                            ->label('Обект/Склад')
-                            ->relationship('storageObject', 'name')
-                            ->getOptionLabelFromRecordUsing(fn($record) => $record->name . ' (' . $record->owner->name . ')')
-                            ->required()
-                            ->searchable()
-                            ->preload(),
-
-                        Select::make('supplier_id')
-                            ->label('Доставчик')
-                            ->relationship('supplier', 'name')
-                            ->nullable()
-                            ->searchable()
-                            ->preload(),
-
-                        TextInput::make('purchase_number')
-                            ->label('Номер')
-                            ->maxLength(100)
-                            ->required(),
-
-                        DatePicker::make('purchase_date')
-                            ->label('Дата на покупка')
-                            ->required()
-                            ->default(now()),
-
-                        DatePicker::make('invoice_date')
-                            ->label('Дата на фактура')
-                            ->nullable(),
-
-                        TextInput::make('supplier_invoice')
-                            ->label('Номер на фактура от доставчик')
-                            ->maxLength(100)
-                            ->nullable(),
-                    ])
-                    ->columnSpan(1),
-
-                Section::make('Финансова информация')
-                    ->schema([
-                        TextInput::make('discount')
-                            ->label('Отстъпка')
-                            ->numeric()
-                            ->step(0.01)
-                            ->prefix('€')
-                            ->default(0)
-                            ->live()
-                            ->afterStateUpdated(fn($set, $get) => self::recalculateTotals($set, $get)),
-
-                        TextInput::make('delivery_cost')
-                            ->label('Транспортни разходи')
-                            ->numeric()
-                            ->step(0.01)
-                            ->prefix('€')
-                            ->default(0)
-                            ->live()
-                            ->afterStateUpdated(fn($set, $get) => self::recalculateTotals($set, $get)),
-
-                        TextInput::make('vat')
-                            ->label('ДДС (20%)')
-                            ->numeric()
-                            ->step(0.01)
-                            ->prefix('€')
-                            ->default(0)
-                            ->live()
-                            ->afterStateUpdated(fn($set, $get) => self::recalculateTotals($set, $get)),
-
-                        TextInput::make('subtotal')
-                            ->label('Междинна сума')
-                            ->numeric()
-                            ->prefix('€')
-                            ->disabled()
-                            ->dehydrated(true),
-
-                        TextInput::make('total')
-                            ->label('Обща сума')
-                            ->numeric()
-                            ->prefix('€')
-                            ->disabled()
-                            ->dehydrated(true)
-                            ->extraAttributes(['class' => 'font-bold text-lg']),
-                    ])
-                    ->columnSpan(1),
-
-                // ⭐ REPEATER – използва product_variant_id ⭐
-                Repeater::make('items')
-                    ->label('')
-                    ->relationship('items')
-                    ->schema([
-                        Grid::make(5)
+                        Section::make('Основни данни')
                             ->schema([
-                                Hidden::make('product_id'),
+                                Hidden::make('user_id')->default(fn() => Auth::id()),
+                                Hidden::make('owner_id')->default(fn() => Auth::user()->owner_id ?? 1),
 
-                                Select::make('product_variant_id')
-                                    ->label('Продукт')
+                                Select::make('storage_object_id')
+                                    ->label('Обект/Склад')
                                     ->options(function () {
-                                        $options = [];
+                                        $user = Auth::user();
+                                        $query = \App\Models\StorageObject::query();
 
-                                        // Всички варианти на продукти
-                                        $variants = ProductVariant::with(['product', 'color', 'size', 'product.unitOfMeasure'])
-                                            ->whereHas('product', fn($q) => $q->where('type', 'product')->where('is_active', true))
-                                            ->get();
-
-                                        foreach ($variants as $variant) {
-                                            $label = $variant->product->name;
-                                            if ($variant->color)
-                                                $label .= ' - ' . $variant->color->name;
-                                            if ($variant->size)
-                                                $label .= ' / ' . $variant->size->name;
-                                            $unitSymbol = $variant->product->unitOfMeasure?->symbol ?? 'бр.';
-                                            $options[$variant->id] = $label . ' [' . $variant->product->sku . '] (' . $unitSymbol . ')';
+                                        if (!$user->hasRole('super_admin') && $user->owner_id) {
+                                            $query->where('owner_id', $user->owner_id);
+                                        } elseif (!$user->hasRole('super_admin')) {
+                                            return [];
                                         }
 
-                                        // Продукти без варианти (ако нямат вариант, създай временен)
-                                        $productsWithoutVariants = Product::with('unitOfMeasure')
-                                            ->where('type', 'product')
-                                            ->where('is_active', true)
-                                            ->whereDoesntHave('variants')
-                                            ->get();
-
-                                        foreach ($productsWithoutVariants as $product) {
-                                            // Създаваме временен виртуален вариант
-                                            $virtualId = 'product_' . $product->id;
-                                            $unitSymbol = $product->unitOfMeasure?->symbol ?? 'бр.';
-                                            $options[$virtualId] = $product->name . ' [' . $product->sku . '] (' . $unitSymbol . ') - ⚠️ Няма вариант';
-                                        }
-
-                                        return $options;
+                                        return $query->get()
+                                            ->mapWithKeys(fn($item) => [$item->id => $item->name . ' (' . $item->owner->name . ')']);
                                     })
                                     ->required()
                                     ->searchable()
-                                    ->preload()
+                                    ->preload(),
+
+                                Select::make('supplier_id')
+                                    ->label('Доставчик')
+                                    ->relationship('supplier', 'name')
+                                    ->nullable()
+                                    ->searchable()
+                                    ->preload(),
+
+                                TextInput::make('purchase_number')
+                                    ->label('Номер')
+                                    ->maxLength(100)
+                                    ->required(),
+
+                                DatePicker::make('purchase_date')
+                                    ->label('Дата на покупка')
+                                    ->required()
+                                    ->default(now()),
+
+                                DatePicker::make('invoice_date')
+                                    ->label('Дата на фактура')
+                                    ->nullable(),
+
+                                TextInput::make('supplier_invoice')
+                                    ->label('Номер на фактура')
+                                    ->maxLength(100)
+                                    ->nullable(),
+                            ])->columnSpan(1),
+
+                        Section::make('Финансова информация')
+                            ->schema([
+                                TextInput::make('discount')
+                                    ->label('Отстъпка (%)')
+                                    ->numeric()
+                                    ->step(0.01)
+                                    ->suffix('%')
+                                    ->default(0)
                                     ->live()
-                                    ->afterStateUpdated(function ($state, $set, $get) {
-                                        self::handleProductSelection($state, $set, $get);
+                                    ->afterStateUpdated(function ($set, $get) {
+                                        self::recalculateTotals($set, $get);
                                     }),
 
-                                // Скрито поле за продукт без вариант
-                                Hidden::make('real_product_id'),
-
-                                TextInput::make('quantity')
-                                    ->label('Количество')
+                                TextInput::make('delivery_cost')
+                                    ->label('Транспорт (€)')
                                     ->numeric()
-                                    ->required()
-                                    ->minValue(0.001)
-                                    ->step(0.001)
-                                    ->default(1)
-                                    ->live()
-                                    ->helperText('Допустими са дробни числа (напр. 0.500 кг, 1.75 л)')
-                                    ->afterStateUpdated(function ($set, $get, $state) {
-                                        // Конвертиране от string към float
-                                        $quantity = floatval(str_replace(',', '.', $state));
-                                        self::updateItemTotals($set, $get, $quantity);
-                                    }),
-
-                                TextInput::make('unit_cost')
-                                    ->label('Ед. цена')
-                                    ->numeric()
-                                    ->required()
                                     ->step(0.01)
                                     ->prefix('€')
+                                    ->default(0)
                                     ->live()
-                                    ->afterStateUpdated(
-                                        fn($set, $get, $state) =>
-                                        self::updateItemTotals($set, $get, null)
-                                    ),
+                                    ->afterStateUpdated(function ($set, $get) {
+                                        self::recalculateTotals($set, $get);
+                                    }),
 
-                                TextInput::make('total_cost')
-                                    ->label('Общо')
+                                TextInput::make('vat')
+                                    ->label('ДДС (%)')
+                                    ->numeric()
+                                    ->step(0.01)
+                                    ->suffix('%')
+                                    ->default(20)
+                                    ->live()
+                                    ->afterStateUpdated(function ($set, $get) {
+                                        self::recalculateTotals($set, $get);
+                                    }),
+
+                                // === SUBTOTAL ===
+                                TextInput::make('subtotal')
+                                    ->label('Междинна сума')
                                     ->numeric()
                                     ->prefix('€')
                                     ->disabled()
-                                    ->dehydrated(true),
+                                    ->dehydrated(false)           // ← важно!
+                                    ->extraAttributes(['class' => 'bg-gray-100']),
 
-                                TextInput::make('final_unit_cost')
-                                    ->label('Крайна ед. цена (с транспорт)')
+                                Hidden::make('subtotal'),         // ← това ще се изпраща към сървъра
+
+                                // === TOTAL ===
+                                TextInput::make('total')
+                                    ->label('Обща сума')
                                     ->numeric()
                                     ->prefix('€')
                                     ->disabled()
-                                    ->dehydrated(true),
-                            ]),
+                                    ->dehydrated(false)           // ← важно!
+                                    ->extraAttributes(['class' => 'font-bold text-lg']),
+
+                                Hidden::make('total'),            // ← това ще се изпраща към сървъра
+                            ])
+                            ->columnSpan(1),
+                    ])->columns(2)->columnSpan(2)->collapsible(),
+
+                Repeater::make('items')
+                    ->label('Артикули')
+                    ->relationship('items')
+                    ->schema([
+                        Grid::make(6)->schema([
+                            Hidden::make('product_id'),
+                            Hidden::make('real_product_id'),
+                            Hidden::make('delivery_cost_share'),
+
+                            Select::make('product_variant_id')
+                                ->label('Продукт')
+                                ->options(function () {
+                                    $options = [];
+
+                                    foreach (ProductVariant::with(['product', 'color', 'size'])
+                                        ->whereHas('product', fn($q) => $q->where('type', 'product')->where('is_active', true))
+                                        ->get() as $variant) {
+                                        $label = $variant->product->name;
+                                        if ($variant->color)
+                                            $label .= ' - ' . $variant->color->name;
+                                        if ($variant->size)
+                                            $label .= ' / ' . $variant->size->name;
+                                        $options[$variant->id] = $label . ' [' . $variant->product->sku . ']';
+                                    }
+
+                                    foreach (Product::where('type', 'product')->where('is_active', true)->whereDoesntHave('variants')->get() as $product) {
+                                        $options['product_' . $product->id] = $product->name . ' [' . $product->sku . '] (без вариант)';
+                                    }
+
+                                    return $options;
+                                })
+                                ->required()
+                                ->searchable()
+                                ->preload()
+                                ->live()
+                                ->afterStateUpdated(fn($state, $set, $get) => self::handleProductSelection($state, $set, $get))
+                                ->columnSpan(2),
+
+                            TextInput::make('quantity')
+                                ->label('Количество')
+                                ->numeric()
+                                ->required()
+                                ->minValue(0.001)
+                                ->step(0.001)
+                                ->default(1)
+                                ->live()
+                                ->afterStateUpdated(function ($set, $get, $state) {
+                                    $quantity = floatval(str_replace(',', '.', $state ?? 1));
+
+                                    // Защита от нула или отрицателно
+                                    if ($quantity <= 0) {
+                                        $quantity = 0.001;
+                                        $set('quantity', 0.001); // поправяме визуално
+                                    }
+
+                                    self::updateItemTotals($set, $get, $quantity);
+                                    self::recalculateTotals($set, $get);
+                                })
+                                ->columnSpan(1),
+
+                            TextInput::make('unit_cost')
+                                ->label('Ед. цена')
+                                ->numeric()
+                                ->required()
+                                ->step(0.01)
+                                ->prefix('€')
+                                ->default(0)
+                                ->live()
+                                ->afterStateUpdated(function ($set, $get, $state) {
+                                    $unitCost = floatval(str_replace(',', '.', $state ?? 0));
+
+                                    // Защита от отрицателна цена
+                                    if ($unitCost < 0) {
+                                        $unitCost = 0;
+                                        $set('unit_cost', 0);
+                                    }
+
+                                    self::updateItemTotals($set, $get, null);
+                                    self::recalculateTotals($set, $get);
+                                })
+                                ->columnSpan(1),
+
+                            TextInput::make('total_cost')
+                                ->label('Общо')
+                                ->numeric()
+                                ->prefix('€')
+                                ->disabled()
+                                ->dehydrated(false)
+                                ->extraAttributes(['class' => 'bg-gray-100']),
+
+                            Hidden::make('total_cost'),
+
+                            TextInput::make('final_unit_cost')
+                                ->label('Крайна цена')
+                                ->numeric()
+                                ->prefix('€')
+                                ->disabled()
+                                ->dehydrated(false)
+                                ->extraAttributes(['class' => 'bg-gray-100']),
+
+                            Hidden::make('final_unit_cost'),
+                        ]),
                     ])
                     ->defaultItems(1)
                     ->minItems(1)
+                    ->maxItems(50)
                     ->columnSpanFull()
                     ->live()
-                    ->afterStateUpdated(function ($state, $set, $get) {
-                        self::recalculateTotals($set, $get);
-                    }),
+                    ->cloneable()
+                    ->reorderable()
+                    ->addActionLabel('➕ Добави артикул')
+                    ->afterStateUpdated(fn($state, $set, $get) => self::recalculateTotals($set, $get)),
 
                 Textarea::make('notes')
                     ->label('Бележки')
-                    ->rows(3)
+                    ->rows(2)
                     ->columnSpanFull(),
 
                 Select::make('status')
                     ->label('Статус')
-                    ->options([
-                        'draft' => 'Чернова',
-                        'completed' => 'Завършена',
-                        'cancelled' => 'Анулирана',
-                    ])
+                    ->options(['draft' => 'Чернова', 'completed' => 'Завършена', 'cancelled' => 'Анулирана'])
                     ->default('draft')
                     ->required(),
             ]);
     }
 
-    /**
-     * Обработка на избор на продукт (виртуален вариант)
-     */
     protected static function handleProductSelection($state, $set, $get)
     {
         if (is_string($state) && str_starts_with($state, 'product_')) {
-            $productId = str_replace('product_', '', $state);
-            $set('product_id', $productId);
-            $set('real_product_id', $productId);
+            $set('product_id', str_replace('product_', '', $state));
         } else {
-            // Обикновен вариант (product_variant_id)
             $variant = ProductVariant::with('product')->find($state);
-            if ($variant) {
+            if ($variant)
                 $set('product_id', $variant->product_id);
-            }
-            $set('real_product_id', null);
         }
-
-        self::updateItemTotals($set, $get, null);
     }
 
-    /**
-     * Изчислява общата сума за един артикул
-     */
     protected static function updateItemTotals($set, $get, $quantity = null)
     {
-        $qty = floatval($quantity ?? $get('quantity') ?? 1);
-        $unitCost = floatval($get('unit_cost') ?? 0);
+        $qty = $quantity ?? floatval(str_replace(',', '.', $get('quantity') ?? 1));
+        $unitCost = floatval(str_replace(',', '.', $get('unit_cost') ?? 0));
+
+        // Допълнителна защита
+        if ($qty <= 0)
+            $qty = 0.001;
+        if ($unitCost < 0)
+            $unitCost = 0;
+
         $total = $qty * $unitCost;
 
         $set('total_cost', round($total, 2));
-        $set('final_unit_cost', round($unitCost, 2));
+        $set('final_unit_cost', round($unitCost, 4));
     }
 
-    /**
-     * Преизчислява общите суми на покупката
-     */
     protected static function recalculateTotals($set, $get)
     {
         $items = $get('items') ?? [];
+
+        if (empty($items)) {
+            $set('subtotal', 0);
+            $set('total', 0);
+            return;
+        }
+
         $subtotal = 0;
 
-        foreach ($items as $item) {
+        foreach ($items as $index => $item) {
             $quantity = floatval($item['quantity'] ?? 0);
             $unitCost = floatval($item['unit_cost'] ?? 0);
-            $subtotal += $quantity * $unitCost;
+            $totalCost = $quantity * $unitCost;
+
+            $subtotal += $totalCost;
+
+            $set("items.{$index}.total_cost", round($totalCost, 2));
+            $set("items.{$index}.final_unit_cost", round($unitCost, 4));
         }
 
         $deliveryCost = floatval($get('delivery_cost') ?? 0);
-        $discount = floatval($get('discount') ?? 0);
-        $vat = floatval($get('vat') ?? 0);
+        $discountPercent = floatval($get('discount') ?? 0);
+        $vatPercent = floatval($get('vat') ?? 0);
 
-        $totalBeforeVat = $subtotal + $deliveryCost - $discount;
-        $total = $totalBeforeVat + $vat;
+        $discountAmount = $subtotal * ($discountPercent / 100);
+        $subtotalAfterDiscount = $subtotal - $discountAmount;
+        $totalBeforeVat = $subtotalAfterDiscount + $deliveryCost;
 
+        // Разпределяне на транспорта
+        if ($subtotal > 0 && $deliveryCost > 0) {
+            foreach ($items as $index => $item) {
+                $quantity = floatval($item['quantity'] ?? 1);
+                $unitCost = floatval($item['unit_cost'] ?? 0);
+                $totalCost = $quantity * $unitCost;
+
+                // Защита от деление на нула
+                $deliveryShare = ($subtotal > 0)
+                    ? ($totalCost / $subtotal) * $deliveryCost
+                    : 0;
+
+                $finalUnitCost = $unitCost + ($quantity > 0 ? ($deliveryShare / $quantity) : 0);
+
+                $set("items.{$index}.delivery_cost_share", round($deliveryShare, 4));
+                $set("items.{$index}.final_unit_cost", round($finalUnitCost, 4));
+            }
+        }
+
+        $vatAmount = $totalBeforeVat * ($vatPercent / 100);
+        $total = $totalBeforeVat + $vatAmount;
+
+        // Важно: обновяваме и двете полета
         $set('subtotal', round($subtotal, 2));
         $set('total', round($total, 2));
     }

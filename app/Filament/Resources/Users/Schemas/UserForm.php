@@ -20,7 +20,7 @@ class UserForm
         $isSuperAdmin = Auth::user()?->hasRole('super_admin');
         $isOwner = Auth::user()?->hasRole('owner');
         $record = $schema->getRecord();
-        
+
         return $schema
             ->components([
                 Tabs::make('User Tabs')
@@ -42,12 +42,6 @@ class UserForm
                                             ->required()
                                             ->unique(ignoreRecord: true)
                                             ->maxLength(255),
-
-                                        TextInput::make('phone')
-                                            ->label('Телефон')
-                                            ->tel()
-                                            ->maxLength(255)
-                                            ->nullable(),
                                     ])
                                     ->columns(2),
                             ]),
@@ -95,17 +89,14 @@ class UserForm
                                             ->visible($isSuperAdmin)
                                             ->helperText('Изберете собственика, към който принадлежи този потребител'),
 
-                                        Select::make('roles')
-                                            ->label('Роли')
+                                        Select::make('role')
+                                            ->label('Роля')
                                             ->options(fn() => Role::where('name', '!=', 'super_admin')
                                                 ->orderBy('name')
                                                 ->pluck('name', 'name'))
-                                            ->multiple()
-                                            ->searchable()
-                                            ->preload()
                                             ->required()
                                             ->visible($isSuperAdmin || $isOwner)
-                                            ->helperText('Изберете ролите за този потребител'),
+                                            ->helperText('Изберете роля за този потребител'),
                                     ])
                                     ->columns(2),
                             ]),

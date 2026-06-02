@@ -5,11 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Auth;
 
 class StorageObject extends Model
 {
     protected $fillable = [
-        'owner_id', 'name', 'address', 'phone', 'manager_name', 'is_active'
+        'owner_id',
+        'name',
+        'address',
+        'phone',
+        'manager_name',
+        'is_active'
     ];
 
     protected $casts = [
@@ -29,5 +35,21 @@ class StorageObject extends Model
     public function receipts(): HasMany
     {
         return $this->hasMany(Receipt::class);
+    }
+
+    public static function getOptionsForCurrentUser()
+    {
+        $user = Auth::user();
+
+        $query = self::query();
+
+        if (!$user->hasRole('super_admin') && $user->owner_id) {
+            $query->where('owner_id', $user->owner_id);
+        } elseif (!$user->hasRole('super_admin')) {
+            return [];
+        }
+
+        return $query->get()
+            ->mapWithKeys(fn($item) => [$item->id => $item->name . ' (' . $item->owner->name . ')']);
     }
 }

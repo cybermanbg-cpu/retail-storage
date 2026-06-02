@@ -16,4 +16,13 @@ class EditUser extends EditRecord
             DeleteAction::make(),
         ];
     }
+
+    protected function afterSave(): void
+    {
+        // Ако има избрана роля
+        if (isset($this->data['role']) && !empty($this->data['role'])) {
+            // Синхронизиране на една роля
+            $this->record->syncRoles([$this->data['role']]);
+        }
+    }
 }

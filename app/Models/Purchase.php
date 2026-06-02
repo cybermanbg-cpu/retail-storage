@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\PurchaseItem;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,9 +9,21 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Purchase extends Model
 {
     protected $fillable = [
-        'owner_id', 'storage_object_id', 'supplier_id', 'user_id',
-        'purchase_number', 'purchase_date', 'invoice_date', 'supplier_invoice',
-        'subtotal', 'discount', 'delivery_cost', 'vat', 'total', 'status', 'notes'
+        'owner_id', 
+        'storage_object_id', 
+        'supplier_id', 
+        'user_id',
+        'purchase_number', 
+        'purchase_date', 
+        'invoice_date', 
+        'supplier_invoice',
+        'subtotal', 
+        'discount', 
+        'delivery_cost', 
+        'vat', 
+        'total', 
+        'status', 
+        'notes'
     ];
 
     protected $casts = [
@@ -23,6 +34,15 @@ class Purchase extends Model
         'delivery_cost' => 'decimal:2',
         'vat' => 'decimal:2',
         'total' => 'decimal:2',
+    ];
+
+    protected $attributes = [
+        'subtotal' => 0,
+        'discount' => 0,
+        'delivery_cost' => 0,
+        'vat' => 20,
+        'total' => 0,
+        'status' => 'draft',
     ];
 
     public function owner(): BelongsTo

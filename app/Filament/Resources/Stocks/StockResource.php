@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Stocks;
 use App\Filament\Resources\Stocks\Pages\CreateStock;
 use App\Filament\Resources\Stocks\Pages\EditStock;
 use App\Filament\Resources\Stocks\Pages\ListStocks;
+use App\Filament\Resources\Stocks\Pages\ViewStock;
 use App\Filament\Resources\Stocks\Schemas\StockForm;
 use App\Filament\Resources\Stocks\Tables\StocksTable;
 use App\Models\Stock;
@@ -20,7 +21,11 @@ class StockResource extends Resource
 {
     protected static ?string $model = Stock::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    // Правилна икона
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::ClipboardDocumentList;
+
+    protected static ?string $navigationLabel = 'Наличности';
+    
 
     public static function form(Schema $schema): Schema
     {
@@ -32,7 +37,7 @@ class StockResource extends Resource
         return StocksTable::configure($table);
     }
 
-     /**
+    /**
      * Филтриране на наличностите според ролята на логнатия потребител
      */
     public static function getEloquentQuery(): Builder
@@ -40,7 +45,6 @@ class StockResource extends Resource
         $query = parent::getEloquentQuery();
         $user = Auth::user();
         
-        // Ако няма логнат потребител
         if (!$user) {
             return $query->whereRaw('0 = 1');
         }
@@ -71,7 +75,6 @@ class StockResource extends Resource
             });
         }
         
-        // За всеки друг случай
         return $query->whereRaw('0 = 1');
     }
     
@@ -90,57 +93,37 @@ class StockResource extends Resource
     }
     
     /**
-     * Кой може да създава наличности
+     * ⭐ Само супер администратор може да създава наличности ⭐
+     * (В краен случай, защото нормално идват от доставки)
      */
     public static function canCreate(): bool
     {
         $user = Auth::user();
         if (!$user) return false;
         
-        // Касиерът НЕ може да създава наличности
-        if ($user->hasRole('cashier')) {
-            return false;
-        }
-        
-        return $user->hasRole('super_admin') || 
-               $user->hasRole('owner') || 
-               $user->hasRole('manager');
+        // Само супер администратор
+        return $user->hasRole('super_admin');
     }
     
     /**
-     * Кой може да редактира наличност
+     * ⭐ Само супер администратор може да редактира наличности ⭐
+     * (В краен случай, защото нормално идват от доставки/продажби)
      */
     public static function canEdit($record): bool
     {
         $user = Auth::user();
         if (!$user) return false;
         
-        // Касиерът НЕ може да редактира наличности
-        if ($user->hasRole('cashier')) {
-            return false;
-        }
-        
-        // Супер администратор може да редактира всички
-        if ($user->hasRole('super_admin')) {
-            return true;
-        }
-        
-        // Собственик и мениджър могат да редактират само своите
-        if (($user->hasRole('owner') || $user->hasRole('manager')) && $user->owner_id) {
-            // Проверка дали наличността е към техния собственик
-            $productOwnerId = $record->productVariant->product->owner_id ?? null;
-            return $productOwnerId === $user->owner_id;
-        }
-        
-        return false;
+        // Само супер администратор
+        return $user->hasRole('super_admin');
     }
     
     /**
-     * Кой може да изтрива наличност
+     * ⭐ НИКОЙ НЕ МОЖЕ ДА ИЗТРИВА НАЛИЧНОСТИ ⭐
      */
     public static function canDelete($record): bool
     {
-        return static::canEdit($record);
+        return false;
     }
     
     /**
@@ -153,9 +136,7 @@ class StockResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array
@@ -163,7 +144,8 @@ class StockResource extends Resource
         return [
             'index' => ListStocks::route('/'),
             'create' => CreateStock::route('/create'),
-            'edit' => EditStock::route('/{record}/edit'),
+            // 'edit' => EditStock::route('/{record}/edit'),
+            'view' => ViewStock::route('/{record}/view'),
         ];
     }
 }

@@ -22,6 +22,12 @@ class UserResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
+         protected static ?string $navigationLabel = 'Потребители';
+    
+    protected static ?string $modelLabel = 'Потребител';
+    
+    protected static ?string $pluralModelLabel = 'Потребители';
+
     public static function form(Schema $schema): Schema
     {
         return UserForm::configure($schema);
@@ -39,89 +45,86 @@ class UserResource extends Resource
     {
         $query = parent::getEloquentQuery();
         $user = Auth::user();
-        
-        // Ако няма логнат потребител
+
         if (!$user) {
             return $query->whereRaw('0 = 1');
         }
-        
-        // Касиер и мениджър не виждат потребители
-        if ($user->hasRole('cashier') || $user->hasRole('manager')) {
-            return $query->whereRaw('0 = 1');
-        }
-        
-        // Супер администратор вижда всички
+
+        // Супер администратор вижда всички активни потребители
         if ($user->hasRole('super_admin')) {
-            return $query;
+            return $query->where('is_active', true);
         }
-        
-        // Собственик вижда само потребителите към неговата фирма
+
+        // Собственик вижда само активните потребители от неговата фирма
         if ($user->hasRole('owner') && $user->owner_id) {
-            return $query->where('owner_id', $user->owner_id);
+            return $query->where('owner_id', $user->owner_id)
+                ->where('is_active', true);
         }
-        
-        // За всеки друг случай
+
         return $query->whereRaw('0 = 1');
     }
-    
+
     /**
      * Кой може да вижда ресурса
      */
     public static function canViewAny(): bool
     {
         $user = Auth::user();
-        if (!$user) return false;
-        
+        if (!$user)
+            return false;
+
         // Касиер и мениджър НЯМАТ достъп
         if ($user->hasRole('cashier') || $user->hasRole('manager')) {
             return false;
         }
-        
+
         return $user->hasRole('super_admin') || $user->hasRole('owner');
     }
-    
+
     /**
      * Кой може да създава потребители
      */
     public static function canCreate(): bool
     {
         $user = Auth::user();
-        if (!$user) return false;
-        
+        if (!$user)
+            return false;
+
         // Касиер и мениджър НЯМАТ достъп
         if ($user->hasRole('cashier') || $user->hasRole('manager')) {
             return false;
         }
-        
+
         return $user->hasRole('super_admin') || $user->hasRole('owner');
     }
-    
+
     /**
      * Кой може да редактира потребител
      */
     public static function canEdit($record): bool
     {
         $user = Auth::user();
-        if (!$user) return false;
-        
+        if (!$user)
+            return false;
+
         // Касиер и мениджър НЯМАТ достъп
         if ($user->hasRole('cashier') || $user->hasRole('manager')) {
             return false;
         }
-        
+
         // Супер администратор може да редактира всички
         if ($user->hasRole('super_admin')) {
             return true;
         }
-        
+
         // Собственик може да редактира само потребителите от неговата фирма
         if ($user->hasRole('owner') && $user->owner_id) {
             return $record->owner_id === $user->owner_id;
         }
-        
+
         return false;
     }
-    
+
     /**
      * Кой може да изтрива потребител
      */
@@ -129,7 +132,7 @@ class UserResource extends Resource
     {
         return static::canEdit($record);
     }
-    
+
     /**
      * Скриване на навигацията за неупълномощени
      */
@@ -153,5 +156,5 @@ class UserResource extends Resource
             'edit' => EditUser::route('/{record}/edit'),
         ];
     }
-    
+
 }

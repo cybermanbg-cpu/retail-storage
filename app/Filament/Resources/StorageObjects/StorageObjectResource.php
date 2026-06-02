@@ -5,6 +5,7 @@ namespace App\Filament\Resources\StorageObjects;
 use App\Filament\Resources\StorageObjects\Pages\CreateStorageObject;
 use App\Filament\Resources\StorageObjects\Pages\EditStorageObject;
 use App\Filament\Resources\StorageObjects\Pages\ListStorageObjects;
+use App\Filament\Resources\Storageobjects\Pages\ViewStorageObject;
 use App\Filament\Resources\StorageObjects\Schemas\StorageObjectForm;
 use App\Filament\Resources\StorageObjects\Tables\StorageObjectsTable;
 use App\Models\StorageObject;
@@ -21,6 +22,12 @@ class StorageObjectResource extends Resource
     protected static ?string $model = StorageObject::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+
+    protected static ?string $navigationLabel = 'Обекти';
+    
+    protected static ?string $modelLabel = 'Обект';
+    
+    protected static ?string $pluralModelLabel = 'Обекти';
 
     public static function form(Schema $schema): Schema
     {
@@ -151,6 +158,7 @@ class StorageObjectResource extends Resource
             'index' => ListStorageObjects::route('/'),
             'create' => CreateStorageObject::route('/create'),
             'edit' => EditStorageObject::route('/{record}/edit'),
+            'view' => ViewStorageObject::route('/{record}/view'),
         ];
     }
 }

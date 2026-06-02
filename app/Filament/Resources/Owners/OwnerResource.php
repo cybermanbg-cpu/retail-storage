@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Owners;
 use App\Filament\Resources\Owners\Pages\CreateOwner;
 use App\Filament\Resources\Owners\Pages\EditOwner;
 use App\Filament\Resources\Owners\Pages\ListOwners;
+use App\Filament\Resources\Owners\Pages\ViewOwner;
 use App\Filament\Resources\Owners\Schemas\OwnerForm;
 use App\Filament\Resources\Owners\Tables\OwnersTable;
 use App\Models\Owner;
@@ -20,7 +21,13 @@ class OwnerResource extends Resource
 {
     protected static ?string $model = Owner::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::BuildingStorefront;
+    
+    protected static ?string $navigationLabel = 'Собственици';
+    
+    protected static ?string $modelLabel = 'Собственик';
+    
+    protected static ?string $pluralModelLabel = 'Собственици';
 
     public static function form(Schema $schema): Schema
     {
@@ -33,7 +40,7 @@ class OwnerResource extends Resource
     }
 
     /**
-     * Филтриране на потребителите според ролята на логнатия потребител
+     * Филтриране на собствениците според ролята на логнатия потребител
      */
     public static function getEloquentQuery(): Builder
     {
@@ -45,22 +52,17 @@ class OwnerResource extends Resource
             return $query->whereRaw('0 = 1');
         }
         
-        // Касиер и мениджър не виждат потребители
-        if ($user->hasRole('cashier') || $user->hasRole('manager')) {
-            return $query->whereRaw('0 = 1');
-        }
-        
-        // Супер администратор вижда всички
+        // Супер администратор вижда всички собственици
         if ($user->hasRole('super_admin')) {
             return $query;
         }
         
-        // Собственик вижда само потребителите към неговата фирма
+        // Собственик вижда само себе си
         if ($user->hasRole('owner') && $user->owner_id) {
-            return $query->where('owner_id', $user->owner_id);
+            return $query->where('id', $user->owner_id);
         }
         
-        // За всеки друг случай
+        // Мениджър и касиер не виждат собственици
         return $query->whereRaw('0 = 1');
     }
     
@@ -72,62 +74,53 @@ class OwnerResource extends Resource
         $user = Auth::user();
         if (!$user) return false;
         
-        // Касиер и мениджър НЯМАТ достъп
-        if ($user->hasRole('cashier') || $user->hasRole('manager')) {
-            return false;
-        }
-        
+        // Само супер администратор и собственик могат да виждат собственици
         return $user->hasRole('super_admin') || $user->hasRole('owner');
     }
     
     /**
-     * Кой може да създава потребители
+     * Кой може да създава собственици
      */
     public static function canCreate(): bool
     {
         $user = Auth::user();
         if (!$user) return false;
         
-        // Касиер и мениджър НЯМАТ достъп
-        if ($user->hasRole('cashier') || $user->hasRole('manager')) {
-            return false;
-        }
-        
-        return $user->hasRole('super_admin') || $user->hasRole('owner');
+        // Само супер администратор може да създава собственици
+        return $user->hasRole('super_admin');
     }
     
     /**
-     * Кой може да редактира потребител
+     * Кой може да редактира собственик
      */
     public static function canEdit($record): bool
     {
         $user = Auth::user();
         if (!$user) return false;
         
-        // Касиер и мениджър НЯМАТ достъп
-        if ($user->hasRole('cashier') || $user->hasRole('manager')) {
-            return false;
-        }
-        
         // Супер администратор може да редактира всички
         if ($user->hasRole('super_admin')) {
             return true;
         }
         
-        // Собственик може да редактира само потребителите от неговата фирма
+        // Собственик може да редактира само себе си
         if ($user->hasRole('owner') && $user->owner_id) {
-            return $record->owner_id === $user->owner_id;
+            return $record->id === $user->owner_id;
         }
         
         return false;
     }
     
     /**
-     * Кой може да изтрива потребител
+     * Кой може да изтрива собственик
      */
     public static function canDelete($record): bool
     {
-        return static::canEdit($record);
+        $user = Auth::user();
+        if (!$user) return false;
+        
+        // Само супер администратор може да изтрива собственици
+        return $user->hasRole('super_admin');
     }
     
     /**
@@ -151,6 +144,7 @@ class OwnerResource extends Resource
             'index' => ListOwners::route('/'),
             'create' => CreateOwner::route('/create'),
             'edit' => EditOwner::route('/{record}/edit'),
+            'view' => ViewOwner::route('/{record}/view'),
         ];
     }
 }

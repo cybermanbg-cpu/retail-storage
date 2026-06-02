@@ -21,7 +21,7 @@ class PurchaseItem extends Model
     ];
 
     protected $casts = [
-        'quantity' => 'decimal:3',           // ⭐ Променено от 'integer' на 'decimal:3'
+        'quantity' => 'decimal:3',
         'unit_cost' => 'decimal:4',
         'total_cost' => 'decimal:4',
         'delivery_cost_share' => 'decimal:4',

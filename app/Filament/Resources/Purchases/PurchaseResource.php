@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Purchases;
 use App\Filament\Resources\Purchases\Pages\CreatePurchase;
 use App\Filament\Resources\Purchases\Pages\EditPurchase;
 use App\Filament\Resources\Purchases\Pages\ListPurchases;
+use App\Filament\Resources\Purchases\Pages\ViewPurchase; // Добавете този импорт
 use App\Filament\Resources\Purchases\Schemas\PurchaseForm;
 use App\Filament\Resources\Purchases\Tables\PurchasesTable;
 use App\Models\Purchase;
@@ -23,6 +24,12 @@ class PurchaseResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
+    protected static ?string $navigationLabel = 'Доставки';
+
+    protected static ?string $modelLabel = 'Доставка';
+
+    protected static ?string $pluralModelLabel = 'Доставки';
+
     public static function form(Schema $schema): Schema
     {
         return PurchaseForm::configure($schema);
@@ -40,163 +47,175 @@ class PurchaseResource extends Resource
     {
         $query = parent::getEloquentQuery();
         $user = Auth::user();
-        
+
         if (!$user) {
             return $query->whereRaw('0 = 1');
         }
-        
+
         // Супер администратор вижда всички
         if ($user->hasRole('super_admin')) {
             return $query;
         }
-        
+
         // Собственик вижда само своите покупки
         if ($user->hasRole('owner') && $user->owner_id) {
             return $query->where('owner_id', $user->owner_id);
         }
-        
+
         // Мениджър вижда покупките на своите обекти
         if ($user->hasRole('manager') && $user->owner_id) {
             return $query->where('owner_id', $user->owner_id);
         }
-        
+
+        // Администратор вижда всички
+        if ($user->hasRole('admin')) {
+            return $query;
+        }
+
         // Касиер НЕ вижда покупки
         if ($user->hasRole('cashier')) {
             return $query->whereRaw('0 = 1');
         }
-        
+
         return $query->whereRaw('0 = 1');
     }
-    
+
     /**
      * Кой може да вижда ресурса
      */
     public static function canViewAny(): bool
     {
         $user = Auth::user();
-        if (!$user) return false;
-        
+        if (!$user)
+            return false;
+
         // Касиерът НЕ вижда покупки
         if ($user->hasRole('cashier')) {
             return false;
         }
-        
-        return $user->hasRole('super_admin') || 
-               $user->hasRole('owner') || 
-               $user->hasRole('manager');
+
+        return $user->hasRole('super_admin') ||
+            $user->hasRole('admin') ||
+            $user->hasRole('owner') ||
+            $user->hasRole('manager');
     }
-    
+
     /**
      * Кой може да създава покупки
      */
     public static function canCreate(): bool
     {
         $user = Auth::user();
-        if (!$user) return false;
-        
+        if (!$user)
+            return false;
+
         // Касиерът НЕ може да създава покупки
         if ($user->hasRole('cashier')) {
             return false;
         }
-        
-        return $user->hasRole('super_admin') || 
-               $user->hasRole('owner') || 
-               $user->hasRole('manager');
+
+        return $user->hasRole('super_admin') ||
+            $user->hasRole('admin') ||
+            $user->hasRole('owner') ||
+            $user->hasRole('manager');
     }
-    
+
     /**
      * Кой може да редактира покупка
      */
     public static function canEdit(Model $record): bool
     {
         $user = Auth::user();
-        if (!$user) return false;
-        
+        if (!$user)
+            return false;
+
         // Касиерът НЕ може да редактира
         if ($user->hasRole('cashier')) {
             return false;
         }
-        
+
+        // Администратор може да редактира дори завършени покупки
+        if ($user->hasRole('admin') || $user->hasRole('super_admin')) {
+            return true; // ⭐ Променено - админ може да редактира и завършени
+        }
+
         // Само чернови могат да се редактират
         if ($record->status !== 'draft') {
             return false;
         }
-        
-        // Супер администратор може да редактира всички чернови
-        if ($user->hasRole('super_admin')) {
-            return true;
-        }
-        
+
         // Собственик и мениджър могат да редактират само своите чернови
         if (($user->hasRole('owner') || $user->hasRole('manager')) && $user->owner_id) {
             return $record->owner_id === $user->owner_id;
         }
-        
+
         return false;
     }
-    
+
     /**
      * Кой може да изтрива покупка
      */
     public static function canDelete(Model $record): bool
     {
         $user = Auth::user();
-        if (!$user) return false;
-        
+        if (!$user)
+            return false;
+
         // Касиерът НЕ може да изтрива
         if ($user->hasRole('cashier')) {
             return false;
         }
-        
+
         // Мениджърът НЕ може да изтрива
         if ($user->hasRole('manager')) {
             return false;
         }
-        
+
+        // Администратор може да изтрива само чернови
+        if ($user->hasRole('admin') || $user->hasRole('super_admin')) {
+            return $record->status === 'draft';
+        }
+
         // Само чернови могат да се изтриват
         if ($record->status !== 'draft') {
             return false;
         }
-        
-        // Супер администратор може да изтрива всички чернови
-        if ($user->hasRole('super_admin')) {
-            return true;
-        }
-        
+
         // Собственик може да изтрива само своите чернови
         if ($user->hasRole('owner') && $user->owner_id) {
             return $record->owner_id === $user->owner_id;
         }
-        
+
         return false;
     }
-    
+
     /**
      * Кой може да преглежда покупка
      */
     public static function canView(Model $record): bool
     {
         $user = Auth::user();
-        if (!$user) return false;
-        
+        if (!$user)
+            return false;
+
         // Касиерът НЕ може да преглежда
         if ($user->hasRole('cashier')) {
             return false;
         }
-        
-        // Супер администратор може да преглежда всички
-        if ($user->hasRole('super_admin')) {
+
+        // Администратор може да преглежда всички (дори завършени) ⭐
+        if ($user->hasRole('admin') || $user->hasRole('super_admin')) {
             return true;
         }
-        
-        // Собственик и мениджър могат да преглеждат своите
+
+        // Собственик и мениджър могат да преглеждат само своите
         if (($user->hasRole('owner') || $user->hasRole('manager')) && $user->owner_id) {
             return $record->owner_id === $user->owner_id;
         }
-        
+
         return false;
     }
-    
+
     /**
      * Скриване на навигацията за неупълномощени
      */
@@ -208,7 +227,8 @@ class PurchaseResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            // Добавете RelationManager за items, ако имате
+            // \App\Filament\Resources\Purchases\RelationManagers\PurchaseItemsRelationManager::class,
         ];
     }
 
@@ -217,6 +237,7 @@ class PurchaseResource extends Resource
         return [
             'index' => ListPurchases::route('/'),
             'create' => CreatePurchase::route('/create'),
+            'view' => ViewPurchase::route('/{record}'), // ⭐ Добавете този ред
             'edit' => EditPurchase::route('/{record}/edit'),
         ];
     }
