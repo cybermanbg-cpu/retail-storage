@@ -36,16 +36,16 @@ class ItemsRelationManager extends RelationManager
                     
                 TextColumn::make('unit_price')
                     ->label('Ед. цена')
-                    ->money('BGN'),
+                    ->money('euro'),
                     
                 TextColumn::make('total')
                     ->label('Общо')
-                    ->money('BGN')
+                    ->money('euro')
                     ->sortable()
                     ->summarize([
                         \Filament\Tables\Columns\Summarizers\Sum::make()
                             ->label('Общо:')
-                            ->money('BGN'),
+                            ->money('€'),
                     ]),
             ]);
     }

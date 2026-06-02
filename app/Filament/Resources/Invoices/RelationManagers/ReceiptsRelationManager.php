@@ -12,6 +12,9 @@ class ReceiptsRelationManager extends RelationManager
 {
     protected static string $relationship = 'receipts';
 
+    protected static ?string $title = 'Стокови разписки';
+
+
     protected static ?string $recordTitleAttribute = 'receipt_number';
 
     public function table(Table $table): Table
@@ -36,12 +39,12 @@ class ReceiptsRelationManager extends RelationManager
                 // ⭐ СУМИРАНЕ НА СУМАТА ⭐
                 TextColumn::make('total_amount')
                     ->label('Сума')
-                    ->money('BGN')
+                    ->money('euro')
                     ->sortable()
                     ->summarize([
                         \Filament\Tables\Columns\Summarizers\Sum::make()
                             ->label('Общо:')
-                            ->money('BGN'),
+                            ->money('euro'),
                     ]),
 
                 TextColumn::make('payment_method')

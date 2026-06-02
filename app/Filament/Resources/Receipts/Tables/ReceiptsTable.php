@@ -42,12 +42,12 @@ class ReceiptsTable
 
                 TextColumn::make('total_amount')
                     ->label('Обща сума')
-                    ->money('BGN')
+                    ->money('euro')
                     ->sortable()
                     ->summarize([
                         \Filament\Tables\Columns\Summarizers\Sum::make()
                             ->label('Общо:')
-                            ->money('BGN'),
+                            ->money('euro'),
                     ]),
 
                 TextColumn::make('payment_method')

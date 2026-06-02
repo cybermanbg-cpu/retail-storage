@@ -42,22 +42,22 @@ class InvoicesTable
 
                 TextColumn::make('vat')
                     ->label('ДДС')
-                    ->money('BGN')
+                    ->money('euro')
                     ->sortable()
                     ->summarize([
                         \Filament\Tables\Columns\Summarizers\Sum::make()
                             ->label('Общо ДДС:')
-                            ->money('BGN'),
+                            ->money('euro'),
                     ]),
 
                 TextColumn::make('total')
                     ->label('Обща сума')
-                    ->money('BGN')
+                    ->money('euro')
                     ->sortable()
                     ->summarize([
                         \Filament\Tables\Columns\Summarizers\Sum::make()
                             ->label('Общо:')
-                            ->money('BGN'),
+                            ->money('euro'),
                     ]),
 
                 // ⭐ СТАТУС С ИМЕ И БАДЖ ⭐
