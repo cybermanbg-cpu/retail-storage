@@ -55,9 +55,9 @@
                     <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $item['client_name'] }}</td>
                     <td class="px-6 py-4 text-sm text-gray-600">{{ $item['client_phone'] ?? '—' }}</td>
                     <td class="px-6 py-4 text-sm text-right">{{ number_format($item['receipt_count']) }}</td>
-                    <td class="px-6 py-4 text-sm text-right font-semibold text-green-600">{{ number_format($item['total_revenue'], 2) }} лв.</td>
-                    <td class="px-6 py-4 text-sm text-right">{{ number_format($item['total_vat'], 2) }} лв.</td>
-                    <td class="px-6 py-4 text-sm text-right">{{ number_format($item['avg_receipt'], 2) }} лв.</td>
+                    <td class="px-6 py-4 text-sm text-right font-semibold text-green-600">{{ number_format($item['total_revenue'], 2) }} €</td>
+                    <td class="px-6 py-4 text-sm text-right">{{ number_format($item['total_vat'], 2) }} €</td>
+                    <td class="px-6 py-4 text-sm text-right">{{ number_format($item['avg_receipt'], 2) }} €</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -65,9 +65,9 @@
                 <tr>
                     <td colspan="2" class="px-6 py-3 text-sm font-bold text-gray-900">ОБЩО:</td>
                     <td class="px-6 py-3 text-sm font-bold text-right">{{ number_format($totalReceipts) }}</td>
-                    <td class="px-6 py-3 text-sm font-bold text-right text-green-700">{{ number_format($totalRevenue, 2) }} лв.</td>
-                    <td class="px-6 py-3 text-sm font-bold text-right">{{ number_format($totalVat, 2) }} лв.</td>
-                    <td class="px-6 py-3 text-sm font-bold text-right">{{ $totalReceipts > 0 ? number_format($totalRevenue / $totalReceipts, 2) : 0 }} лв.</td>
+                    <td class="px-6 py-3 text-sm font-bold text-right text-green-700">{{ number_format($totalRevenue, 2) }} €</td>
+                    <td class="px-6 py-3 text-sm font-bold text-right">{{ number_format($totalVat, 2) }} €</td>
+                    <td class="px-6 py-3 text-sm font-bold text-right">{{ $totalReceipts > 0 ? number_format($totalRevenue / $totalReceipts, 2) : 0 }} €</td>
                 </tr>
             </tfoot>
         </table>

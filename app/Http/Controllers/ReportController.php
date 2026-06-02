@@ -8,6 +8,7 @@ use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\Receipt;
 use App\Models\ReceiptItem;
+use App\Models\Stock;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -245,6 +246,89 @@ class ReportController extends Controller
     }
 
     /**
+     * ОБОРОТИ ПО СЛУЖИТЕЛИ (касиери, мениджъри, собственици)
+     */
+    public function staffSales(Request $request)
+    {
+        $user = Auth::user();
+
+        // Само super_admin и owner виждат този отчет
+        if (!$user->hasRole('super_admin') && !$user->hasRole('owner')) {
+            abort(403, 'Нямате достъп до този отчет.');
+        }
+
+        $ownerId = $this->getOwnerId();
+
+        $startDate = $request->get('start_date')
+            ? Carbon::parse($request->get('start_date'))->startOfDay()
+            : now()->startOfMonth();
+
+        $endDate = $request->get('end_date')
+            ? Carbon::parse($request->get('end_date'))->endOfDay()
+            : now();
+
+        // Всички потребители, които имат продажби (касиери, мениджъри, собственици)
+        $staff = User::whereHas('receipts', function ($q) use ($startDate, $endDate, $ownerId) {
+            $q->whereBetween('created_at', [$startDate, $endDate])
+                ->where('type', 'sale');
+            if ($ownerId) {
+                $q->where('owner_id', $ownerId);
+            }
+        })
+            ->when($ownerId, function ($query) use ($ownerId) {
+                return $query->where('owner_id', $ownerId);
+            })
+            ->with('roles')
+            ->get();
+
+        $report = [];
+
+        foreach ($staff as $staffMember) {
+            $sales = Receipt::where('user_id', $staffMember->id)
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->where('type', 'sale')
+                ->when($ownerId, function ($query) use ($ownerId) {
+                    return $query->where('owner_id', $ownerId);
+                })
+                ->select(
+                    DB::raw('COUNT(*) as receipt_count'),
+                    DB::raw('SUM(total_amount) as total_revenue'),
+                    DB::raw('SUM(total_vat) as total_vat'),
+                    DB::raw('COUNT(DISTINCT client_id) as unique_clients')
+                )
+                ->first();
+
+            // Определяне на ролята
+            $roleName = 'Касиер';
+            if ($staffMember->hasRole('super_admin')) {
+                $roleName = 'Супер администратор';
+            } elseif ($staffMember->hasRole('owner')) {
+                $roleName = 'Собственик';
+            } elseif ($staffMember->hasRole('manager')) {
+                $roleName = 'Мениджър';
+            } elseif ($staffMember->hasRole('cashier')) {
+                $roleName = 'Касиер';
+            }
+
+            $report[] = [
+                'staff_name' => $staffMember->name,
+                'role' => $roleName,
+                'receipt_count' => $sales->receipt_count ?? 0,
+                'total_revenue' => $sales->total_revenue ?? 0,
+                'total_vat' => $sales->total_vat ?? 0,
+                'unique_clients' => $sales->unique_clients ?? 0,
+                'avg_receipt' => ($sales->receipt_count ?? 0) > 0
+                    ? ($sales->total_revenue / $sales->receipt_count)
+                    : 0,
+            ];
+        }
+
+        $report = collect($report)->sortByDesc('total_revenue')->values();
+
+        return view('reports.staff-sales', compact('report', 'startDate', 'endDate'));
+    }
+
+    /**
      * ОБОРОТИ ПО МЕСЕЦИ
      */
     public function monthlySales(Request $request)
@@ -305,6 +389,132 @@ class ReportController extends Controller
     }
 
     /**
+     * ПЕЧАЛБА ОТ ПРОДАЖБИТЕ (COGS)
+     */
+    public function profitAnalysis(Request $request)
+    {
+        $ownerId = $this->getOwnerId();
+
+        $startDate = $request->get('start_date')
+            ? Carbon::parse($request->get('start_date'))->startOfDay()
+            : now()->startOfMonth();
+
+        $endDate = $request->get('end_date')
+            ? Carbon::parse($request->get('end_date'))->endOfDay()
+            : now();
+
+        // Вземаме всички продадени артикули
+        $salesItems = ReceiptItem::whereHas('receipt', function ($q) use ($startDate, $endDate, $ownerId) {
+            $q->whereBetween('created_at', [$startDate, $endDate])
+                ->where('type', 'sale');
+            if ($ownerId) {
+                $q->where('owner_id', $ownerId);
+            }
+        })
+            ->with(['productVariant.product', 'receipt'])
+            ->get();
+
+        $report = [];
+        $totalRevenue = 0;
+        $totalCOGS = 0;
+        $totalProfit = 0;
+
+        foreach ($salesItems as $item) {
+            $product = $item->productVariant->product;
+            $quantity = $item->quantity;
+            $sellingPrice = $item->unit_price;
+            $revenue = $item->total;
+
+            // Изчисляване на себестойността (средна цена от наличностите)
+            $costPerUnit = $this->getCostPerUnit($product->id, $item->receipt->storage_object_id, $item->created_at);
+            $cogs = $quantity * $costPerUnit;
+            $profit = $revenue - $cogs;
+
+            $totalRevenue += $revenue;
+            $totalCOGS += $cogs;
+            $totalProfit += $profit;
+
+            $report[] = [
+                'receipt_number' => $item->receipt->receipt_number,
+                'date' => $item->receipt->created_at,
+                'product_name' => $product->name,
+                'variant' => $this->getVariantName($item->productVariant),
+                'quantity' => $quantity,
+                'unit' => $product->unitOfMeasure?->symbol ?? 'бр.',
+                'selling_price' => $sellingPrice,
+                'revenue' => $revenue,
+                'cost_per_unit' => $costPerUnit,
+                'cogs' => $cogs,
+                'profit' => $profit,
+                'margin_percent' => $revenue > 0 ? ($profit / $revenue) * 100 : 0,
+            ];
+        }
+
+        // Сортиране по печалба низходящо
+        $report = collect($report)->sortByDesc('profit')->values();
+
+        // Агрегиране по продукти
+        $productSummary = collect($report)->groupBy('product_name')->map(function ($items, $productName) {
+            return [
+                'product_name' => $productName,
+                'quantity' => $items->sum('quantity'),
+                'revenue' => $items->sum('revenue'),
+                'cogs' => $items->sum('cogs'),
+                'profit' => $items->sum('profit'),
+                'margin_percent' => $items->sum('revenue') > 0
+                    ? ($items->sum('profit') / $items->sum('revenue')) * 100
+                    : 0,
+            ];
+        })->sortByDesc('profit')->values();
+
+        return view('reports.profit-analysis', compact('report', 'productSummary', 'startDate', 'endDate', 'totalRevenue', 'totalCOGS', 'totalProfit'));
+    }
+
+    /**
+     * Взема себестойност на продукт към определена дата
+     */
+    private function getCostPerUnit($productId, $storageObjectId, $date)
+    {
+        $result = DB::table('purchase_items')
+            ->select('purchase_items.final_unit_cost')
+            ->join('purchases', 'purchase_items.purchase_id', '=', 'purchases.id')
+            ->join('product_variants', 'purchase_items.product_variant_id', '=', 'product_variants.id')
+            ->join('products', 'product_variants.product_id', '=', 'products.id')
+            ->where('products.id', $productId)
+            ->where('purchases.storage_object_id', $storageObjectId)
+            ->where('purchases.purchase_date', '<=', $date)
+            ->orderBy('purchases.purchase_date', 'desc')
+            ->first();
+
+        if ($result) {
+            return $result->final_unit_cost;
+        }
+
+        $stock = Stock::whereHas('productVariant.product', function ($q) use ($productId) {
+            $q->where('id', $productId);
+        })
+            ->where('storage_object_id', $storageObjectId)
+            ->first();
+
+        return $stock ? $stock->average_cost : 0;
+    }
+
+    /**
+     * Взема името на варианта (цвят/размер)
+     */
+    private function getVariantName($variant)
+    {
+        $name = '';
+        if ($variant->color) {
+            $name .= $variant->color->name;
+        }
+        if ($variant->size) {
+            $name .= ($name ? ' / ' : '') . $variant->size->name;
+        }
+        return $name ?: 'Стандартен';
+    }
+
+    /**
      * ДОСТАВКИ ПО ПРОДУКТИ
      */
     public function productPurchases(Request $request)
@@ -358,6 +568,173 @@ class ReportController extends Controller
         $report = collect($report)->filter(fn($item) => $item['purchased_quantity'] > 0)->values();
 
         return view('reports.product-purchases', compact('report', 'startDate', 'endDate'));
+    }
+
+    // Метод в ReportController
+    public function stockStatus(Request $request)
+    {
+        $ownerId = $this->getOwnerId();
+        $storageId = $request->get('storage_object_id');
+
+        $query = Stock::with(['productVariant.product', 'storageObject'])
+            ->whereHas('productVariant.product', fn($q) => $q->where('type', 'product'));
+
+        if ($ownerId) {
+            $query->whereHas('productVariant.product', fn($q) => $q->where('owner_id', $ownerId));
+        }
+        if ($storageId) {
+            $query->where('storage_object_id', $storageId);
+        }
+
+        $stocks = $query->get();
+
+        $totalValue = $stocks->sum(fn($s) => $s->quantity * $s->average_cost);
+        $lowStock = $stocks->filter(fn($s) => $s->is_low_stock);
+
+        return view('reports.stock-status', compact('stocks', 'totalValue', 'lowStock'));
+    }
+
+    public function hourlySales(Request $request)
+    {
+        $date = $request->get('date', now()->toDateString());
+
+        $sales = Receipt::whereDate('created_at', $date)
+            ->where('type', 'sale')
+            ->select(
+                DB::raw('HOUR(created_at) as hour'),
+                DB::raw('COUNT(*) as receipts'),
+                DB::raw('SUM(total_amount) as total')
+            )
+            ->groupBy('hour')
+            ->orderBy('hour')
+            ->get();
+
+        return view('reports.hourly-sales', compact('sales', 'date'));
+    }
+
+    public function topProducts(Request $request)
+    {
+        $period = $request->get('period', 'month'); // week, month, year
+
+        $startDate = match ($period) {
+            'week' => now()->startOfWeek(),
+            'month' => now()->startOfMonth(),
+            'year' => now()->startOfYear(),
+            default => now()->startOfMonth(),
+        };
+
+        $topProducts = ReceiptItem::select(
+            'product_name_snapshot',
+            DB::raw('SUM(quantity) as total_quantity'),
+            DB::raw('SUM(total) as total_revenue')
+        )
+            ->whereHas('receipt', fn($q) => $q->where('created_at', '>=', $startDate))
+            ->groupBy('product_name_snapshot')
+            ->orderByDesc('total_revenue')
+            ->limit(10)
+            ->get();
+
+        return view('reports.top-products', compact('topProducts', 'period'));
+    }
+
+    public function customerAnalysis(Request $request)
+    {
+        $customers = Client::withSum('receipts as total_spent', 'total_amount')
+            ->withCount('receipts')
+            ->where('is_active', true)
+            ->orderByDesc('total_spent')
+            ->get();
+
+        $avgSpent = $customers->avg('total_spent');
+        $totalCustomers = $customers->count();
+
+        return view('reports.customer-analysis', compact('customers', 'avgSpent', 'totalCustomers'));
+    }
+
+    public function dailyTurnover(Request $request)
+    {
+        $month = $request->get('month', now()->month);
+        $year = $request->get('year', now()->year);
+
+        $daysInMonth = Carbon::create($year, $month)->daysInMonth;
+
+        $daily = Receipt::whereYear('created_at', $year)
+            ->whereMonth('created_at', $month)
+            ->where('type', 'sale')
+            ->select(
+                DB::raw('DAY(created_at) as day'),
+                DB::raw('SUM(total_amount) as total')
+            )
+            ->groupBy('day')
+            ->get()
+            ->keyBy('day');
+
+        return view('reports.daily-turnover', compact('daily', 'daysInMonth', 'month', 'year'));
+    }
+
+    public function monthlyProfit(Request $request)
+    {
+        $year = $request->get('year', now()->year);
+
+        $revenue = Receipt::whereYear('created_at', $year)
+            ->where('type', 'sale')
+            ->select(DB::raw('MONTH(created_at) as month'), DB::raw('SUM(total_amount) as total'))
+            ->groupBy('month')
+            ->get()
+            ->keyBy('month');
+
+        $costs = Purchase::whereYear('purchase_date', $year)
+            ->select(DB::raw('MONTH(purchase_date) as month'), DB::raw('SUM(total) as total'))
+            ->groupBy('month')
+            ->get()
+            ->keyBy('month');
+
+        $months = ['Яну', 'Фев', 'Мар', 'Апр', 'Май', 'Юни', 'Юли', 'Авг', 'Сеп', 'Окт', 'Ное', 'Дек'];
+        $report = [];
+
+        foreach ($months as $i => $name) {
+            $monthNum = $i + 1;
+            $inc = $revenue[$monthNum]->total ?? 0;
+            $out = $costs[$monthNum]->total ?? 0;
+            $report[] = [
+                'month' => $name,
+                'revenue' => $inc,
+                'costs' => $out,
+                'profit' => $inc - $out,
+                'margin' => $inc > 0 ? (($inc - $out) / $inc) * 100 : 0,
+            ];
+        }
+
+        return view('reports.monthly-profit', compact('report', 'year'));
+    }
+
+    public function paymentMethods(Request $request)
+    {
+        $startDate = $request->get('start_date', now()->startOfMonth());
+        $endDate = $request->get('end_date', now());
+
+        $methods = Receipt::whereBetween('created_at', [$startDate, $endDate])
+            ->where('type', 'sale')
+            ->select('payment_method', DB::raw('COUNT(*) as count'), DB::raw('SUM(total_amount) as total'))
+            ->groupBy('payment_method')
+            ->get();
+
+        $totalCount = $methods->sum('count');
+        $totalAmount = $methods->sum('total');
+
+        return view('reports.payment-methods', compact('methods', 'totalCount', 'totalAmount', 'startDate', 'endDate'));
+    }
+
+    public function lowStockAlert()
+    {
+        $lowStocks = Stock::with(['productVariant.product', 'storageObject'])
+            ->whereRaw('quantity <= min_quantity')
+            ->where('quantity', '>', 0)
+            ->get();
+
+        $totalValue = $lowStocks->sum(fn($s) => ($s->min_quantity - $s->quantity) * $s->average_cost);
+
+        return view('reports.low-stock', compact('lowStocks', 'totalValue'));
     }
 
     /**

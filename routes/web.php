@@ -71,6 +71,18 @@ Route::middleware(['auth', 'no.cashier'])->prefix('reports')->group(function () 
     Route::get('/cashier-sales', [ReportController::class, 'cashierSales'])->name('reports.cashier-sales');
     Route::get('/monthly-sales', [ReportController::class, 'monthlySales'])->name('reports.monthly-sales');
     Route::get('/product-purchases', [ReportController::class, 'productPurchases'])->name('reports.product-purchases');
+    Route::get('/staff-sales', [ReportController::class, 'staffSales'])->name('reports.staff-sales');
+    Route::get('/profit-analysis', [ReportController::class, 'profitAnalysis'])->name('reports.profit-analysis');
+
+    // Нови доклади
+    Route::get('/stock-status', [ReportController::class, 'stockStatus'])->name('reports.stock-status');
+    Route::get('/hourly-sales', [ReportController::class, 'hourlySales'])->name('reports.hourly-sales');
+    Route::get('/top-products', [ReportController::class, 'topProducts'])->name('reports.top-products');
+    Route::get('/customer-analysis', [ReportController::class, 'customerAnalysis'])->name('reports.customer-analysis');
+    Route::get('/daily-turnover', [ReportController::class, 'dailyTurnover'])->name('reports.daily-turnover');
+    Route::get('/monthly-profit', [ReportController::class, 'monthlyProfit'])->name('reports.monthly-profit');
+    Route::get('/low-stock', [ReportController::class, 'lowStockAlert'])->name('reports.low-stock');
+    Route::get('/payment-methods', [ReportController::class, 'paymentMethods'])->name('reports.payment-methods');
 });
 
 // ========================================

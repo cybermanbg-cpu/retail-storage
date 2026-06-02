@@ -57,10 +57,10 @@
                     <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $item['product_name'] }}</td>
                     <td class="px-6 py-4 text-sm text-gray-600">{{ $item['sku'] }}</td>
                     <td class="px-6 py-4 text-sm text-right">{{ number_format($item['sold_quantity'], 2) }} {{ $item['unit'] }}</td>
-                    <td class="px-6 py-4 text-sm text-right font-semibold text-green-600">{{ number_format($item['revenue'], 2) }} лв.</td>
+                    <td class="px-6 py-4 text-sm text-right font-semibold text-green-600">{{ number_format($item['revenue'], 2) }} €</td>
                     <td class="px-6 py-4 text-sm text-right">{{ number_format($item['purchased_quantity'], 2) }} {{ $item['unit'] }}</td>
-                    <td class="px-6 py-4 text-sm text-right text-orange-600">{{ number_format($item['cost'], 2) }} лв.</td>
-                    <td class="px-6 py-4 text-sm text-right font-semibold text-blue-600">{{ number_format($item['profit'], 2) }} лв.</td>
+                    <td class="px-6 py-4 text-sm text-right text-orange-600">{{ number_format($item['cost'], 2) }} €</td>
+                    <td class="px-6 py-4 text-sm text-right font-semibold text-blue-600">{{ number_format($item['profit'], 2) }} €</td>
                     <td class="px-6 py-4 text-sm text-right">
                         <span class="px-2 py-1 rounded-full text-xs {{ $item['margin'] >= 20 ? 'bg-green-100 text-green-800' : ($item['margin'] >= 10 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
                             {{ number_format($item['margin'], 1) }}%
@@ -73,10 +73,10 @@
                 <tr>
                     <td colspan="2" class="px-6 py-3 text-sm font-bold text-gray-900">ОБЩО:</td>
                     <td class="px-6 py-3 text-sm font-bold text-right">-</td>
-                    <td class="px-6 py-3 text-sm font-bold text-right text-green-700">{{ number_format($totalRevenue, 2) }} лв.</td>
+                    <td class="px-6 py-3 text-sm font-bold text-right text-green-700">{{ number_format($totalRevenue, 2) }} €</td>
                     <td class="px-6 py-3 text-sm font-bold text-right">-</td>
-                    <td class="px-6 py-3 text-sm font-bold text-right text-orange-700">{{ number_format($totalCost, 2) }} лв.</td>
-                    <td class="px-6 py-3 text-sm font-bold text-right text-blue-700">{{ number_format($totalProfit, 2) }} лв.</td>
+                    <td class="px-6 py-3 text-sm font-bold text-right text-orange-700">{{ number_format($totalCost, 2) }} €</td>
+                    <td class="px-6 py-3 text-sm font-bold text-right text-blue-700">{{ number_format($totalProfit, 2) }} €</td>
                     <td class="px-6 py-3 text-sm font-bold text-right">{{ $totalRevenue > 0 ? number_format(($totalProfit / $totalRevenue) * 100, 1) : 0 }}%</td>
                 </tr>
             </tfoot>

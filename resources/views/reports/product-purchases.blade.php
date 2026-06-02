@@ -52,8 +52,8 @@
                     <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $item['product_name'] }}</td>
                     <td class="px-6 py-4 text-sm text-gray-600">{{ $item['sku'] }}</td>
                     <td class="px-6 py-4 text-sm text-right">{{ number_format($item['purchased_quantity'], 2) }} {{ $item['unit'] }}</td>
-                    <td class="px-6 py-4 text-sm text-right font-semibold text-orange-600">{{ number_format($item['total_cost'], 2) }} лв.</td>
-                    <td class="px-6 py-4 text-sm text-right">{{ number_format($item['avg_cost'], 2) }} лв.</td>
+                    <td class="px-6 py-4 text-sm text-right font-semibold text-orange-600">{{ number_format($item['total_cost'], 2) }} €</td>
+                    <td class="px-6 py-4 text-sm text-right">{{ number_format($item['avg_cost'], 2) }} €</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -61,8 +61,8 @@
                 <tr>
                     <td colspan="2" class="px-6 py-3 text-sm font-bold text-gray-900">ОБЩО:</td>
                     <td class="px-6 py-3 text-sm font-bold text-right">{{ number_format($totalQuantity, 2) }}</td>
-                    <td class="px-6 py-3 text-sm font-bold text-right text-orange-700">{{ number_format($totalCost, 2) }} лв.</td>
-                    <td class="px-6 py-3 text-sm font-bold text-right">{{ $totalQuantity > 0 ? number_format($totalCost / $totalQuantity, 2) : 0 }} лв.</td>
+                    <td class="px-6 py-3 text-sm font-bold text-right text-orange-700">{{ number_format($totalCost, 2) }} €</td>
+                    <td class="px-6 py-3 text-sm font-bold text-right">{{ $totalQuantity > 0 ? number_format($totalCost / $totalQuantity, 2) : 0 }} €</td>
                 </tr>
             </tfoot>
         </table>

@@ -46,6 +46,11 @@ class AdminPanelProvider extends PanelProvider
                     ->url('/', shouldOpenInNewTab: false)
                     ->icon('heroicon-o-link')
                     ->sort(1),
+                NavigationItem::make('career-plan-external')
+                    ->label('Доклади')
+                    ->url('/reports', shouldOpenInNewTab: false)
+                    ->icon('heroicon-o-link')
+                    ->sort(1),
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([

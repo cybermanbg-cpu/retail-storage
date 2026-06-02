@@ -33,13 +33,13 @@
 
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="text-3xl text-purple-500 mb-2">💰</div>
-                <div class="text-2xl font-bold text-green-600">{{ number_format($todaySales, 2) }} лв.</div>
+                <div class="text-2xl font-bold text-green-600">{{ number_format($todaySales, 2) }} €</div>
                 <div class="text-gray-600">Продажби днес ({{ $todayReceipts }} бр.)</div>
             </div>
 
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="text-3xl text-indigo-500 mb-2">📅</div>
-                <div class="text-2xl font-bold text-primary-600">{{ number_format($monthSales, 2) }} лв.</div>
+                <div class="text-2xl font-bold text-primary-600">{{ number_format($monthSales, 2) }} €</div>
                 <div class="text-gray-600">Продажби този месец</div>
             </div>
         </div>
@@ -65,7 +65,7 @@
                 @if ($topClient && $topClient->client)
                     <div class="text-center py-4">
                         <div class="text-2xl font-bold text-gray-800">{{ $topClient->client->name }}</div>
-                        <div class="text-4xl font-bold text-green-600 mt-2">{{ number_format($topClient->total, 2) }} лв.
+                        <div class="text-4xl font-bold text-green-600 mt-2">{{ number_format($topClient->total, 2) }} €
                         </div>
                         <div class="text-gray-500">оборот за месеца</div>
                     </div>
