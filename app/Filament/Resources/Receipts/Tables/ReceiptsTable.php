@@ -41,13 +41,13 @@ class ReceiptsTable
                     ->searchable(),
 
                 TextColumn::make('total_amount')
-                    ->label('Сума')
-                    ->money('€')
+                    ->label('Обща сума')
+                    ->money('BGN')
                     ->sortable()
                     ->summarize([
                         \Filament\Tables\Columns\Summarizers\Sum::make()
                             ->label('Общо:')
-                            ->money('€'),
+                            ->money('BGN'),
                     ]),
 
                 TextColumn::make('payment_method')
@@ -117,6 +117,9 @@ class ReceiptsTable
                 Group::make('user.name')
                     ->label('Касиер')
                     ->collapsible(),
+
+                Group::make('client.name')
+                    ->label('Клиент'),
 
                 Group::make('storageObject.name')
                     ->label('Обект')

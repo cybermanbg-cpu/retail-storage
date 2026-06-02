@@ -40,25 +40,25 @@ class InvoicesTable
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
-              TextColumn::make('vat')
-    ->label('ДДС')
-    ->money('BGN')
-    ->sortable()
-    ->summarize([
-        \Filament\Tables\Columns\Summarizers\Sum::make()
-            ->label('Общо ДДС:')
-            ->money('BGN'),
-    ]),
+                TextColumn::make('vat')
+                    ->label('ДДС')
+                    ->money('BGN')
+                    ->sortable()
+                    ->summarize([
+                        \Filament\Tables\Columns\Summarizers\Sum::make()
+                            ->label('Общо ДДС:')
+                            ->money('BGN'),
+                    ]),
 
-TextColumn::make('total')
-    ->label('Обща сума')
-    ->money('BGN')
-    ->sortable()
-    ->summarize([
-        \Filament\Tables\Columns\Summarizers\Sum::make()
-            ->label('Общо:')
-            ->money('BGN'),
-    ]),
+                TextColumn::make('total')
+                    ->label('Обща сума')
+                    ->money('BGN')
+                    ->sortable()
+                    ->summarize([
+                        \Filament\Tables\Columns\Summarizers\Sum::make()
+                            ->label('Общо:')
+                            ->money('BGN'),
+                    ]),
 
                 // ⭐ СТАТУС С ИМЕ И БАДЖ ⭐
                 TextColumn::make('status')
@@ -98,7 +98,7 @@ TextColumn::make('total')
                 SelectFilter::make('client_id')
                     ->label('Клиент')
                     ->relationship('client', 'name'),
-                    
+
                 \Filament\Tables\Filters\Filter::make('issue_date')
                     ->form([
                         \Filament\Forms\Components\DatePicker::make('from')
