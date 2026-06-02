@@ -9,11 +9,21 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Receipt extends Model
 {
-   protected $fillable = [
-    'owner_id', 'storage_object_id', 'client_id', 'user_id',
-    'receipt_number', 'type', 'total_amount', 'total_vat',
-    'payment_method', 'amount_paid', 'change_amount', 'notes', 'is_invoiced'
-];
+    protected $fillable = [
+        'owner_id',
+        'storage_object_id',
+        'client_id',
+        'user_id',
+        'receipt_number',
+        'type',
+        'total_amount',
+        'total_vat',
+        'payment_method',
+        'amount_paid',
+        'change_amount',
+        'notes',
+        'is_invoiced'
+    ];
 
     protected $casts = [
         'total_amount' => 'decimal:2',
@@ -49,5 +59,10 @@ class Receipt extends Model
     public function invoices(): BelongsToMany
     {
         return $this->belongsToMany(Invoice::class, 'invoice_receipt');
+    }
+
+    public function getGrandTotalAttribute(): float
+    {
+        return $this->total_amount + $this->total_vat;
     }
 }

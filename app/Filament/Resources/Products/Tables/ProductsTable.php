@@ -50,7 +50,7 @@ class ProductsTable
 
                 TextColumn::make('base_price')
                     ->label('Цена')
-                    ->money('BGN')
+                    ->money('€')
                     ->sortable(),
 
                 TextColumn::make('vat_rate')

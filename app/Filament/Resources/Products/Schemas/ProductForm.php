@@ -87,13 +87,13 @@ class ProductForm
                     ->label('Базова цена')
                     ->numeric()
                     ->required()
-                    ->prefix('лв.')
+                    ->prefix('€')
                     ->step(0.01),
                     
                 TextInput::make('cost')
                     ->label('Себестойност')
                     ->numeric()
-                    ->prefix('лв.')
+                    ->prefix('€')
                     ->step(0.01),
                     
                 TextInput::make('vat_rate')

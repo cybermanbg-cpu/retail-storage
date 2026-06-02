@@ -167,7 +167,7 @@ class VariantsRelationManager extends RelationManager
 
                 TextColumn::make('final_price')
                     ->label('Цена')
-                    ->money('BGN')
+                    ->money('€')
                     ->state(fn($record) => $record->final_price),
 
                 IconColumn::make('is_active')

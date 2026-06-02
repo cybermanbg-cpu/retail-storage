@@ -8,7 +8,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Owner extends Model
 {
     protected $fillable = [
-        'name', 'company_name', 'email', 'phone', 'vat_number', 'is_active'
+        'name',
+        'company_name',
+        'email',
+        'phone',
+        'vat_number',
+        'is_active',
+        'next_invoice_sequence',
+        
     ];
 
     protected $casts = [

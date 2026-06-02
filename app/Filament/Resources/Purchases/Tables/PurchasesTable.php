@@ -49,7 +49,7 @@ class PurchasesTable
                 
                 TextColumn::make('total')
                     ->label('Сума')
-                    ->money('BGN')
+                    ->money('€')
                     ->sortable(),
                 
                 TextColumn::make('status')
