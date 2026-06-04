@@ -11,7 +11,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password', 'owner_id', 'phone', 'is_active'])]
+#[Fillable(['name', 'email', 'password', 'owner_id', 'storage_object_id', 'phone', 'is_active'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -27,6 +27,11 @@ class User extends Authenticatable
     public function owner()
     {
         return $this->belongsTo(Owner::class);
+    }
+
+    public function storageObject()
+    {
+        return $this->belongsTo(StorageObject::class);
     }
 
     public function activeCarts()
@@ -67,5 +72,10 @@ class User extends Authenticatable
     public function isCashier(): bool
     {
         return $this->hasRole('cashier');
+    }
+    
+    public function isKiosk(): bool
+    {
+        return $this->hasRole('kiosk');
     }
 }

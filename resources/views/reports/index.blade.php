@@ -63,8 +63,6 @@
             <p class="text-gray-600">Себестойност (COGS) и печалба</p>
         </a>
 
-        <!-- ⭐ НОВИ ДОКЛАДИ ⭐ -->
-
         <!-- Складова наличност -->
         <a href="{{ route('reports.stock-status') }}" class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
             <div class="text-4xl text-cyan-500 mb-3">📦</div>
@@ -119,6 +117,29 @@
             <div class="text-4xl text-violet-500 mb-3">💳</div>
             <h2 class="text-xl font-semibold mb-2">Начини на плащане</h2>
             <p class="text-gray-600">Разпределение на продажбите</p>
+        </a>
+
+        <!-- ⭐ НОВИ SHOPPING MALL ДОКЛАДИ ⭐ -->
+
+        <!-- Мол POS - Продажби -->
+        <a href="{{ route('reports.shopping-mall-sales') }}" class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition border-2 border-purple-200">
+            <div class="text-4xl text-purple-500 mb-3">🛍️</div>
+            <h2 class="text-xl font-semibold mb-2">Мол POS - Продажби</h2>
+            <p class="text-gray-600">Обобщени продажби от мола (сметки)</p>
+        </a>
+
+        <!-- Мол POS - Продажби по щандове -->
+        <a href="{{ route('reports.kiosk-sales') }}" class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition border-2 border-indigo-200">
+            <div class="text-4xl text-indigo-500 mb-3">🏪</div>
+            <h2 class="text-xl font-semibold mb-2">Мол POS - Продажби по щандове</h2>
+            <p class="text-gray-600">Анализ на продажбите от отделните щандове</p>
+        </a>
+
+        <!-- Мол POS - Продажби по продукти -->
+        <a href="{{ route('reports.shopping-mall-product-sales') }}" class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition border-2 border-fuchsia-200">
+            <div class="text-4xl text-fuchsia-500 mb-3">🍕</div>
+            <h2 class="text-xl font-semibold mb-2">Мол POS - Продукти</h2>
+            <p class="text-gray-600">Най-продаваните продукти в мола</p>
         </a>
     </div>
 </div>

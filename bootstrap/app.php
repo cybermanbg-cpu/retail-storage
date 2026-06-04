@@ -15,6 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'set.owner' => \App\Http\Middleware\SetCurrentOwner::class,
             'no.cashier' => \App\Http\Middleware\RestrictCashierFromReports::class,
+            'role' => \App\Http\Middleware\RoleMiddleware::class,
+    
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

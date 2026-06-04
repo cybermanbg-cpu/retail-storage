@@ -4,6 +4,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PosController;
 use App\Http\Controllers\PrintController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ShoppingMallPosController;
 use App\Http\Controllers\StockController;
 use Illuminate\Support\Facades\Route;
 
@@ -78,12 +79,39 @@ Route::middleware(['auth', 'no.cashier'])->prefix('reports')->group(function () 
     Route::get('/monthly-profit', [ReportController::class, 'monthlyProfit'])->name('reports.monthly-profit');
     Route::get('/low-stock', [ReportController::class, 'lowStockAlert'])->name('reports.low-stock');
     Route::get('/payment-methods', [ReportController::class, 'paymentMethods'])->name('reports.payment-methods');
+    Route::get('/shopping-mall-sales', [ReportController::class, 'shoppingMallSales'])->name('reports.shopping-mall-sales');
+    Route::get('/kiosk-sales', [ReportController::class, 'kioskSales'])->name('reports.kiosk-sales');
+    Route::get('/shopping-mall-product-sales', [ReportController::class, 'shoppingMallProductSales'])->name('reports.shopping-mall-product-sales');
 });
 
 // Печатни форми
 Route::middleware(['auth'])->prefix('print')->group(function () {
     Route::get('/receipt/{id}', [PrintController::class, 'printReceipt'])->name('print.receipt');
     Route::get('/invoice/{id}', [PrintController::class, 'printInvoice'])->name('print.invoice');
+});
+
+// ========================================
+// SHOPPING MALL POS МАРШРУТИ - ОПРОСТЕНИ
+// ========================================
+Route::middleware(['auth'])->prefix('shopping-mall')->group(function () {
+
+    // Всички маршрути са достъпни за логнати потребители
+    Route::get('/', [App\Http\Controllers\ShoppingMallPosController::class, 'index'])->name('shopping-mall.pos');
+    Route::get('/kiosk', [App\Http\Controllers\ShoppingMallPosController::class, 'kioskIndex'])->name('shopping-mall.kiosk');
+    Route::get('/sessions', [App\Http\Controllers\ShoppingMallPosController::class, 'getSessions']);
+    Route::get('/sessions/{token}', [App\Http\Controllers\ShoppingMallPosController::class, 'getSession']);
+    Route::get('/sessions/{token}/summary', [App\Http\Controllers\ShoppingMallPosController::class, 'getSessionSummary']);
+    Route::get('/search-products', [App\Http\Controllers\ShoppingMallPosController::class, 'searchProducts']);
+
+    Route::post('/sessions', [App\Http\Controllers\ShoppingMallPosController::class, 'createSession']);
+    Route::post('/items', [App\Http\Controllers\ShoppingMallPosController::class, 'addItem']);
+    Route::post('/payment', [App\Http\Controllers\ShoppingMallPosController::class, 'processPayment']);
+
+    Route::put('/items/{itemId}', [App\Http\Controllers\ShoppingMallPosController::class, 'updateItemQuantity']);
+    Route::put('/sessions/{sessionId}/note', [App\Http\Controllers\ShoppingMallPosController::class, 'updateSessionNote']);
+
+    Route::delete('/items/{itemId}', [App\Http\Controllers\ShoppingMallPosController::class, 'removeItem']);
+    Route::delete('/sessions/{sessionId}', [App\Http\Controllers\ShoppingMallPosController::class, 'cancelSession']);
 });
 
 // Fallback

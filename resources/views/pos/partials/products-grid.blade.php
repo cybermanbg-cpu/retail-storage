@@ -43,7 +43,6 @@
         </div>
 
         <!-- Грид с продукти (скрит до зареждане) -->
-        <!-- Грид с продукти (скрит до зареждане) -->
         <div id="productsGrid" class="grid grid-cols-2 md:grid-cols-3 gap-4 max-h-[600px] overflow-y-auto hidden">
             @foreach ($products as $product)
                 @if ($product->variants->count() > 0)

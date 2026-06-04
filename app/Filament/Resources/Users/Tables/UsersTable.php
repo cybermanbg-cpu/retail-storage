@@ -39,6 +39,16 @@ class UsersTable
                     ->sortable()
                     ->visible($isSuperAdmin),
                     
+                // ⭐ НОВА КОЛОНА ЗА СКЛАДОВ ОБЕКТ ⭐
+                TextColumn::make('storageObject.name')
+                    ->label('Складов обект')
+                    ->searchable()
+                    ->sortable()
+                    ->default('-')
+                    ->tooltip('Складът, в който работи потребителят')
+                    ->color(fn($state) => $state && $state !== '-' ? 'success' : 'gray')
+                    ->icon(fn($state) => $state && $state !== '-' ? 'heroicon-o-building-storefront' : 'heroicon-o-question-mark-circle'),
+                    
                 TextColumn::make('roles.name')
                     ->label('Роли')
                     ->badge()
@@ -47,6 +57,7 @@ class UsersTable
                         'owner' => 'warning',
                         'manager' => 'info',
                         'cashier' => 'success',
+                        'kiosk' => 'primary',  // ⭐ ДОБАВЕНА РОЛЯ ЗА ЩАНД
                         default => 'gray',
                     })
                     ->searchable(),
@@ -66,6 +77,12 @@ class UsersTable
                 SelectFilter::make('owner_id')
                     ->label('Собственик')
                     ->relationship('owner', 'name')
+                    ->visible($isSuperAdmin),
+                    
+                // ⭐ НОВ ФИЛТЪР ЗА СКЛАДОВ ОБЕКТ ⭐
+                SelectFilter::make('storage_object_id')
+                    ->label('Складов обект')
+                    ->relationship('storageObject', 'name')
                     ->visible($isSuperAdmin),
                     
                 SelectFilter::make('roles')

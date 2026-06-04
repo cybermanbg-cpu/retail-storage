@@ -9,6 +9,18 @@
         <div class="text-sm text-gray-600 bg-white px-4 py-2 rounded-lg shadow">
             Обект: <span class="font-semibold">{{ $storageObject->name }}</span>
         </div>
+        <a href="{{ route('home') }}" 
+           class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition flex items-center gap-2">
+            <i class="fas fa-home"></i> Начало
+        </a>
+        <a href="{{ route('logout') }}" 
+           class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition flex items-center gap-2"
+           onclick="event.preventDefault(); document.getElementById('logout-form-pos').submit();">
+            <i class="fas fa-sign-out-alt"></i> Изход
+        </a>
+        <form id="logout-form-pos" action="{{ route('logout') }}" method="GET" style="display: none;">
+            @csrf
+        </form>
     </div>
 </div>
 

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Users\Schemas;
 
 use App\Models\Owner;
+use App\Models\StorageObject;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -70,12 +71,12 @@ class UserForm
                                     ->columns(2),
                             ]),
 
-                        // ====================== TAB 3 - РОЛИ И ПРАВА ======================
-                        Tabs\Tab::make('Роли и права')
+                        // ====================== TAB 3 - РОЛИ, ПРАВА И СКЛАД ======================
+                        Tabs\Tab::make('Роли, права и склад')
                             ->icon('heroicon-o-shield-check')
                             ->visible($isSuperAdmin || $isOwner)
                             ->schema([
-                                Section::make('Достъп и права')
+                                Section::make('Организационни настройки')
                                     ->schema([
                                         Select::make('owner_id')
                                             ->label('Собственик')
@@ -87,7 +88,9 @@ class UserForm
                                             ->nullable()
                                             ->required()
                                             ->visible($isSuperAdmin)
-                                            ->helperText('Изберете собственика, към който принадлежи този потребител'),
+                                            ->helperText('Изберете собственика, към който принадлежи този потребител')
+                                            ->reactive()
+                                            ->afterStateUpdated(fn($set) => $set('storage_object_id', null)),
 
                                         Select::make('role')
                                             ->label('Роля')
@@ -96,9 +99,52 @@ class UserForm
                                                 ->pluck('name', 'name'))
                                             ->required()
                                             ->visible($isSuperAdmin || $isOwner)
-                                            ->helperText('Изберете роля за този потребител'),
+                                            ->helperText('Изберете роля за този потребител')
+                                            ->reactive(),
                                     ])
                                     ->columns(2),
+
+                                // ⭐ НОВА СЕКЦИЯ - СКЛАДОВ ОБЕКТ ⭐
+                                Section::make('Складов обект')
+                                    ->description('Изберете складов обект, с който ще работи потребителят')
+                                    ->schema([
+                                        Select::make('storage_object_id')
+                                            ->label('Складов обект')
+                                            ->options(function ($get) use ($isSuperAdmin, $record) {
+                                                // За super_admin - всички складове
+                                                if ($isSuperAdmin) {
+                                                    return StorageObject::where('is_active', true)
+                                                        ->with('owner')
+                                                        ->orderBy('name')
+                                                        ->get()
+                                                        ->mapWithKeys(fn($item) => [
+                                                            $item->id => $item->name . ' (' . ($item->owner->name ?? 'Без собственик') . ')'
+                                                        ])
+                                                        ->toArray();
+                                                }
+                                                
+                                                // За owner - само складовете на неговия собственик
+                                                $ownerId = $get('owner_id') ?? $record?->owner_id ?? Auth::user()?->owner_id;
+                                                
+                                                if ($ownerId) {
+                                                    return StorageObject::where('owner_id', $ownerId)
+                                                        ->where('is_active', true)
+                                                        ->orderBy('name')
+                                                        ->pluck('name', 'id')
+                                                        ->toArray();
+                                                }
+                                                
+                                                return [];
+                                            })
+                                            ->searchable()
+                                            ->preload()
+                                            ->nullable()
+                                            ->helperText('Изберете складов обект, в който потребителят ще работи (само за касиери и щандове)')
+                                            ->placeholder('Изберете складов обект...'),
+                                    ])
+                                    ->columns(1)
+                                    ->collapsible()
+                                    ->collapsed(fn($get) => empty($get('storage_object_id'))),
                             ]),
 
                         // ====================== TAB 4 - СТАТУС ======================

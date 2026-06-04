@@ -7,6 +7,8 @@ use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\Receipt;
+use App\Models\ShoppingSession;
+use App\Models\ShoppingSessionItem;
 use App\Models\ReceiptItem;
 use App\Models\Stock;
 use App\Models\User;
@@ -810,5 +812,222 @@ class ReportController extends Controller
             'topProduct',
             'topClient'
         ));
+    }
+
+    /**
+     * ОБОРОТИ ОТ SHOPPING MALL (сметки)
+     */
+    public function shoppingMallSales(Request $request)
+    {
+        $ownerId = $this->getOwnerId();
+
+        // Обработка на бързи периоди
+        $quickPeriod = $request->get('quick_period');
+
+        if ($quickPeriod == 'month') {
+            $startDate = now()->startOfMonth();
+            $endDate = now()->endOfMonth();
+        } elseif ($quickPeriod == 'quarter') {
+            $startDate = now()->startOfQuarter();
+            $endDate = now()->endOfQuarter();
+        } elseif ($quickPeriod == 'half_year') {
+            $startDate = now()->subMonths(6)->startOfDay();
+            $endDate = now();
+        } elseif ($quickPeriod == 'year') {
+            $startDate = now()->startOfYear();
+            $endDate = now()->endOfYear();
+        } else {
+            $startDate = $request->get('start_date')
+                ? Carbon::parse($request->get('start_date'))->startOfDay()
+                : now()->startOfMonth();
+
+            $endDate = $request->get('end_date')
+                ? Carbon::parse($request->get('end_date'))->endOfDay()
+                : now();
+        }
+
+        $sessions = ShoppingSession::whereBetween('created_at', [$startDate, $endDate])
+            ->when($ownerId, function ($query) use ($ownerId) {
+                return $query->where('owner_id', $ownerId);
+            })
+            ->with(['items', 'createdBy', 'paidBy'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $report = [];
+        $totalRevenue = 0;
+        $totalCompleted = 0;
+        $totalCancelled = 0;
+
+        foreach ($sessions as $session) {
+            $revenue = $session->total_amount;
+            $totalRevenue += $revenue;
+
+            if ($session->status === 'completed') {
+                $totalCompleted += $revenue;
+            } elseif ($session->status === 'cancelled') {
+                $totalCancelled += $revenue;
+            }
+
+            $report[] = [
+                'session_token' => $session->session_token,
+                'customer_name' => $session->customer_name ?? 'Анонимен',
+                'created_at' => $session->created_at,
+                'paid_at' => $session->paid_at,
+                'status' => $session->status,
+                'total_amount' => $session->total_amount,
+                'paid_amount' => $session->paid_amount,
+                'payment_method' => $session->payment_method,
+                'items_count' => $session->items->count(),
+                'created_by' => $session->createdBy?->name,
+                'paid_by' => $session->paidBy?->name,
+            ];
+        }
+
+        return view('reports.shopping-mall-sales', compact('report', 'startDate', 'endDate', 'totalRevenue', 'totalCompleted', 'totalCancelled'));
+    }
+
+    /**
+     * ПРОДАЖБИ ПО ЩАНДОВЕ (KIOSK) ОТ SHOPPING MALL
+     */
+    public function kioskSales(Request $request)
+    {
+        $ownerId = $this->getOwnerId();
+
+        // Обработка на бързи периоди
+        $quickPeriod = $request->get('quick_period');
+
+        if ($quickPeriod == 'month') {
+            $startDate = now()->startOfMonth();
+            $endDate = now()->endOfMonth();
+        } elseif ($quickPeriod == 'quarter') {
+            $startDate = now()->startOfQuarter();
+            $endDate = now()->endOfQuarter();
+        } elseif ($quickPeriod == 'half_year') {
+            $startDate = now()->subMonths(6)->startOfDay();
+            $endDate = now();
+        } elseif ($quickPeriod == 'year') {
+            $startDate = now()->startOfYear();
+            $endDate = now()->endOfYear();
+        } else {
+            $startDate = $request->get('start_date')
+                ? Carbon::parse($request->get('start_date'))->startOfDay()
+                : now()->startOfMonth();
+
+            $endDate = $request->get('end_date')
+                ? Carbon::parse($request->get('end_date'))->endOfDay()
+                : now();
+        }
+
+        // Вземаме всички артикули от завършени сметки
+        $items = ShoppingSessionItem::whereHas('shoppingSession', function ($q) use ($startDate, $endDate, $ownerId) {
+            $q->whereBetween('created_at', [$startDate, $endDate])
+                ->where('status', 'completed');
+            if ($ownerId) {
+                $q->where('owner_id', $ownerId);
+            }
+        })
+            ->with(['kiosk', 'product'])
+            ->get();
+
+        // Групиране по щандове (като масив)
+        $kioskSummary = $items->groupBy('kiosk_id')->map(function ($kioskItems, $kioskId) {
+            $kiosk = $kioskItems->first()->kiosk;
+            return [
+                'kiosk_name' => $kiosk?->name ?? 'Неизвестен щанд',
+                'items_count' => $kioskItems->count(),
+                'total_quantity' => $kioskItems->sum('quantity'),
+                'total_revenue' => $kioskItems->sum('total_price'),
+            ];
+        })->sortByDesc('total_revenue')->values();
+
+        // Детайлен списък (като масив)
+        $report = $items->map(function ($item) {
+            return [
+                'session_token' => $item->shoppingSession->session_token,
+                'date' => $item->created_at,
+                'kiosk_name' => $item->kiosk?->name ?? 'Неизвестен',
+                'product_name' => $item->product_name,
+                'quantity' => $item->quantity,
+                'unit_price' => $item->unit_price,
+                'total_price' => $item->total_price,
+                'unit' => $item->unit,
+            ];
+        });
+
+        return view('reports.kiosk-sales', compact('report', 'kioskSummary', 'startDate', 'endDate'));
+    }
+
+    /**
+     * ПРОДАЖБИ ПО ПРОДУКТИ ОТ SHOPPING MALL
+     */
+    public function shoppingMallProductSales(Request $request)
+    {
+        $ownerId = $this->getOwnerId();
+
+        // Обработка на бързи периоди
+        $quickPeriod = $request->get('quick_period');
+
+        if ($quickPeriod == 'month') {
+            $startDate = now()->startOfMonth();
+            $endDate = now()->endOfMonth();
+        } elseif ($quickPeriod == 'quarter') {
+            $startDate = now()->startOfQuarter();
+            $endDate = now()->endOfQuarter();
+        } elseif ($quickPeriod == 'half_year') {
+            $startDate = now()->subMonths(6)->startOfDay();
+            $endDate = now();
+        } elseif ($quickPeriod == 'year') {
+            $startDate = now()->startOfYear();
+            $endDate = now()->endOfYear();
+        } else {
+            $startDate = $request->get('start_date')
+                ? Carbon::parse($request->get('start_date'))->startOfDay()
+                : now()->startOfMonth();
+
+            $endDate = $request->get('end_date')
+                ? Carbon::parse($request->get('end_date'))->endOfDay()
+                : now();
+        }
+
+        $items = ShoppingSessionItem::whereHas('shoppingSession', function ($q) use ($startDate, $endDate, $ownerId) {
+            $q->whereBetween('created_at', [$startDate, $endDate])
+                ->where('status', 'completed');
+            if ($ownerId) {
+                $q->where('owner_id', $ownerId);
+            }
+        })
+            ->with(['kiosk', 'product'])
+            ->get();
+
+        // Групиране по продукти
+        $productSummary = $items->groupBy('product_id')->map(function ($productItems, $productId) {
+            $firstItem = $productItems->first();
+            return [
+                'product_name' => $firstItem->product_name,
+                'unit' => $firstItem->unit ?? 'бр.',
+                'quantity' => $productItems->sum('quantity'),
+                'total_revenue' => $productItems->sum('total_price'),
+            ];
+        })->sortByDesc('total_revenue')->values();
+
+        // Детайлен списък
+        $report = $items->map(function ($item) {
+            return [
+                'session_token' => $item->shoppingSession->session_token,
+                'date' => $item->created_at,
+                'product_name' => $item->product_name,
+                'quantity' => $item->quantity,
+                'unit_price' => $item->unit_price,
+                'total_price' => $item->total_price,
+                'unit' => $item->unit,
+                'kiosk_name' => $item->kiosk?->name ?? 'Неизвестен',
+            ];
+        });
+
+        $totalRevenue = $items->sum('total_price');
+        $totalQuantity = $items->sum('quantity');
+
+        return view('reports.shopping-mall-product-sales', compact('report', 'productSummary', 'startDate', 'endDate', 'totalRevenue', 'totalQuantity'));
     }
 }

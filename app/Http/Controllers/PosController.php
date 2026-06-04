@@ -327,9 +327,13 @@ class PosController extends Controller
     /**
      * Restaurant POS изглед
      */
+    /**
+     * Restaurant POS изглед
+     */
     public function restaurantPos()
     {
         $categories = Category::where('is_active', true)
+            ->where('show_in_restaurant_pos', true)
             ->where('owner_id', $this->getCurrentOwnerId())
             ->orderBy('sort_order')
             ->get();
@@ -337,7 +341,15 @@ class PosController extends Controller
         $clients = Client::where('is_active', true)->get();
         $storageObject = StorageObject::first();
 
-        return view('pos.restaurant', compact('categories', 'clients', 'storageObject'));
+        // Вземаме активните колички за ресторанта
+        $activeCarts = $this->cartService->getActiveCarts();
+        $currentCart = $activeCarts->first();
+
+        if (!$currentCart) {
+            $currentCart = $this->cartService->createCart($storageObject->id);
+        }
+
+        return view('pos.restaurant', compact('categories', 'clients', 'storageObject', 'activeCarts', 'currentCart'));
     }
 
     /**
@@ -347,18 +359,40 @@ class PosController extends Controller
     {
         $category = Category::with('products')->findOrFail($categoryId);
 
-        $products = $category->products->map(function ($product) {
+        $storageObjectId = StorageObject::first()->id;
+
+        $products = $category->products->filter(function ($product) use ($storageObjectId) {
+            $variant = $product->variants()->first();
+            if (!$variant)
+                return false;
+
+            $stock = Stock::where('product_variant_id', $variant->id)
+                ->where('storage_object_id', $storageObjectId)
+                ->first();
+
+            return $stock && $stock->quantity > 0;
+        })->map(function ($product) use ($storageObjectId) {
+            $variant = $product->variants()->first();
+            $stock = Stock::where('product_variant_id', $variant->id)
+                ->where('storage_object_id', $storageObjectId)
+                ->first();
+
+            $maxDiscount = $product->categories->max('default_discount');
+
             return [
                 'id' => $product->id,
                 'name' => $product->name,
                 'base_price' => $product->base_price,
-                'discounted_price' => $product->discounted_price,
-                'discount_percent' => $product->categories->max('default_discount'),
+                'discounted_price' => round($product->base_price - ($product->base_price * $maxDiscount / 100), 2),
+                'discount_percent' => $maxDiscount,
+                'available_quantity' => $stock ? $stock->quantity : 0,
+                'unit' => $product->unitOfMeasure?->symbol ?? 'бр.',
             ];
         });
 
-        return response()->json($products);
+        return response()->json($products->values());
     }
+
 
     /**
      * Създаване на разписка за Restaurant POS
@@ -369,40 +403,54 @@ class PosController extends Controller
             DB::beginTransaction();
 
             $data = $request->validate([
+                'cart_id' => 'required|exists:active_carts,id',
                 'client_id' => 'nullable|exists:clients,id',
                 'storage_object_id' => 'required|exists:storage_objects,id',
                 'items' => 'required|array',
                 'items.*.product_id' => 'required|exists:products,id',
                 'items.*.quantity' => 'required|numeric|min:0.001',
                 'items.*.price' => 'required|numeric|min:0',
+                'table_number' => 'nullable|integer',
+                'payment_method' => 'nullable|string',
+                'amount_paid' => 'nullable|numeric|min:0',
+                'change_amount' => 'nullable|numeric|min:0',
             ]);
 
-            // Намери активна количка или създай нова
-            $activeCarts = $this->cartService->getActiveCarts();
-            $cart = $activeCarts->first();
+            $cart = ActiveCart::where('user_id', Auth::id())
+                ->where('id', $data['cart_id'])
+                ->where('status', 'active')
+                ->first();
 
             if (!$cart) {
-                $cart = $this->cartService->createCart($data['storage_object_id']);
+                return response()->json(['success' => false, 'message' => 'Количката не беше намерена'], 404);
             }
 
             $receiptNumber = 'R-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
 
             $totalAmount = 0;
             $totalVat = 0;
+            $itemsData = [];
 
             foreach ($data['items'] as $item) {
                 $product = Product::find($item['product_id']);
-                $price = $item['price'];
-                $quantity = $item['quantity'];
-                $vatRate = $product->vat_rate;
+                $price = floatval($item['price']);
+                $quantity = floatval($item['quantity']);
+                $vatRate = floatval($product->vat_rate);
                 $vatAmount = ($price * $vatRate / 100) * $quantity;
 
                 $totalAmount += $price * $quantity;
                 $totalVat += $vatAmount;
+
+                $itemsData[] = [
+                    'product' => $product,
+                    'price' => $price,
+                    'quantity' => $quantity,
+                    'vatRate' => $vatRate,
+                ];
             }
 
             $receipt = Receipt::create([
-                'owner_id' => $this->getCurrentOwnerId(),
+                'owner_id' => $cart->owner_id,
                 'storage_object_id' => $data['storage_object_id'],
                 'client_id' => $data['client_id'] ?? null,
                 'user_id' => Auth::id(),
@@ -410,27 +458,49 @@ class PosController extends Controller
                 'type' => 'sale',
                 'total_amount' => $totalAmount,
                 'total_vat' => $totalVat,
-                'notes' => null,
+                'payment_method' => $data['payment_method'] ?? 'cash',
+                'amount_paid' => $data['amount_paid'] ?? ($totalAmount + $totalVat),
+                'change_amount' => $data['change_amount'] ?? 0,
+                'notes' => $data['table_number'] ? "Маса: {$data['table_number']}" : null,
                 'is_invoiced' => false,
             ]);
 
-            // Запис на артикулите (опростено за restaurant POS)
-            foreach ($data['items'] as $item) {
-                $product = Product::find($item['product_id']);
+            foreach ($itemsData as $itemData) {
+                // Намери или създай вариант
+                $variant = ProductVariant::firstOrCreate(
+                    ['product_id' => $itemData['product']->id],
+                    ['color_id' => null, 'size_id' => null, 'sku_suffix' => null, 'price_adjustment' => 0, 'is_active' => true]
+                );
 
                 ReceiptItem::create([
                     'receipt_id' => $receipt->id,
-                    'product_variant_id' => null,
-                    'product_name_snapshot' => $product->name,
-                    'sku_snapshot' => $product->sku,
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['price'],
-                    'vat_rate' => $product->vat_rate,
-                    'total' => $item['price'] * $item['quantity'],
-                    'unit_of_measure_snapshot' => $product->unitOfMeasure?->symbol ?? 'бр.',
-                    'decimal_places_snapshot' => $product->unitOfMeasure?->decimal_places ?? 0,
+                    'product_variant_id' => $variant->id,
+                    'product_name_snapshot' => $itemData['product']->name,
+                    'sku_snapshot' => $itemData['product']->sku,
+                    'quantity' => $itemData['quantity'],
+                    'unit_price' => $itemData['price'],
+                    'vat_rate' => $itemData['vatRate'],
+                    'total' => $itemData['price'] * $itemData['quantity'],
+                    'unit_of_measure_snapshot' => $itemData['product']->unitOfMeasure?->symbol ?? 'бр.',
+                    'decimal_places_snapshot' => $itemData['product']->unitOfMeasure?->decimal_places ?? 0,
                 ]);
+
+                // Намаляване на наличността
+                $stock = Stock::where('product_variant_id', $variant->id)
+                    ->where('storage_object_id', $data['storage_object_id'])
+                    ->first();
+
+                if ($stock) {
+                    $stock->decrement('quantity', $itemData['quantity']);
+                }
             }
+
+            // Маркираме количката като завършена
+            $cart->status = 'completed';
+            $cart->save();
+
+            // Създаваме нова количка за следваща поръчка
+            $newCart = $this->cartService->createCart($data['storage_object_id']);
 
             DB::commit();
 
@@ -438,14 +508,13 @@ class PosController extends Controller
                 'success' => true,
                 'receipt' => $receipt,
                 'receipt_number' => $receiptNumber,
+                'new_cart_id' => $newCart->id,
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
+            \Log::error('Restaurant receipt error:', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -480,21 +549,42 @@ class PosController extends Controller
 
     public function allProducts()
     {
+        $storageObjectId = StorageObject::first()->id;
+
         $products = Product::where('type', 'product')
             ->where('is_active', true)
             ->where('owner_id', $this->getCurrentOwnerId())
             ->get()
-            ->map(function ($product) {
+            ->filter(function ($product) use ($storageObjectId) {
+                $variant = $product->variants()->first();
+                if (!$variant)
+                    return false;
+
+                $stock = Stock::where('product_variant_id', $variant->id)
+                    ->where('storage_object_id', $storageObjectId)
+                    ->first();
+
+                return $stock && $stock->quantity > 0;
+            })
+            ->map(function ($product) use ($storageObjectId) {
+                $variant = $product->variants()->first();
+                $stock = Stock::where('product_variant_id', $variant->id)
+                    ->where('storage_object_id', $storageObjectId)
+                    ->first();
+
                 $maxDiscount = $product->categories->max('default_discount');
+
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
                     'base_price' => $product->base_price,
                     'discounted_price' => round($product->base_price - ($product->base_price * $maxDiscount / 100), 2),
                     'discount_percent' => $maxDiscount,
+                    'available_quantity' => $stock ? $stock->quantity : 0,
                 ];
             });
 
-        return response()->json($products);
+        // ⭐ ГАРАНТИРАМЕ, ЧЕ ВРЪЩАМЕ МАСИВ ⭐
+        return response()->json($products->values());
     }
 }
