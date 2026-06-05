@@ -29,6 +29,10 @@
                         class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition shadow-md">
                         <i class="fas fa-exchange-alt mr-1"></i> Към Щанд
                     </a>
+                    <a href="{{ route('home') }}"
+                        class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition shadow-md">
+                        <i class="fas fa-home mr-1"></i> Начало
+                    </a>
                     <button onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
                         class="bg-red-500/80 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition">
                         <i class="fas fa-sign-out-alt mr-1"></i> Изход

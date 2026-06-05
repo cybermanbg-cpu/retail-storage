@@ -34,6 +34,10 @@
                         class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition shadow-md">
                         <i class="fas fa-exchange-alt mr-1"></i> Към Каса
                     </a>
+                    <a href="{{ route('home') }}"
+                        class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition shadow-md">
+                        <i class="fas fa-home mr-1"></i> Начало
+                    </a>
                     <button onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
                         class="bg-red-500/80 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition">
                         <i class="fas fa-sign-out-alt mr-1"></i> Изход
@@ -77,21 +81,28 @@
                                 if ($availableQty <= 0) {
                                     $stockBadge = '<div class="text-xs text-red-500 mt-1">✗ Няма наличност</div>';
                                 } elseif ($availableQty < 5) {
-                                    $stockBadge = '<div class="text-xs text-orange-500 mt-1">⚠️ Остава: ' . $availableQty . '</div>';
+                                    $stockBadge =
+                                        '<div class="text-xs text-orange-500 mt-1">⚠️ Остава: ' .
+                                        $availableQty .
+                                        '</div>';
                                 } else {
-                                    $stockBadge = '<div class="text-xs text-green-500 mt-1">✓ Налично: ' . $availableQty . '</div>';
+                                    $stockBadge =
+                                        '<div class="text-xs text-green-500 mt-1">✓ Налично: ' .
+                                        $availableQty .
+                                        '</div>';
                                 }
                             @endphp
                             <div class="product-card bg-white border-2 border-gray-100 hover:border-green-500 rounded-2xl p-3 cursor-pointer transition-all hover:shadow-lg text-center {{ $stockClass }}"
                                 data-product-id="{{ $product['id'] }}"
                                 data-product-name="{{ addslashes($product['name']) }}"
                                 data-product-price="{{ $product['base_price'] }}"
-                                data-product-unit="{{ $product['unit_symbol'] }}"
-                                data-available-qty="{{ $availableQty }}"
+                                data-product-unit="{{ $product['unit_symbol'] }}" data-available-qty="{{ $availableQty }}"
                                 onclick="addToCurrentSession(this)">
                                 <div class="text-5xl mb-2">{{ getProductIcon($product['name']) }}</div>
-                                <div class="font-semibold text-sm leading-tight">{{ Str::limit($product['name'], 30) }}</div>
-                                <div class="text-green-600 font-bold mt-2">{{ number_format($product['base_price'], 2) }} €</div>
+                                <div class="font-semibold text-sm leading-tight">{{ Str::limit($product['name'], 30) }}
+                                </div>
+                                <div class="text-green-600 font-bold mt-2">{{ number_format($product['base_price'], 2) }} €
+                                </div>
                                 <div class="text-xs text-gray-400 mt-1">{{ $product['unit_symbol'] }}</div>
                                 {!! $stockBadge !!}
                             </div>
@@ -118,7 +129,8 @@
                         <button onclick="openNoteModal()" class="bg-gray-300 hover:bg-gray-400 py-2 rounded-xl">
                             <i class="fas fa-sticky-note mr-1"></i> Бележка
                         </button>
-                        <button onclick="cancelCurrentSession()" class="bg-red-500 hover:bg-red-600 text-white py-2 rounded-xl">
+                        <button onclick="cancelCurrentSession()"
+                            class="bg-red-500 hover:bg-red-600 text-white py-2 rounded-xl">
                             <i class="fas fa-trash mr-1"></i> Анулирай
                         </button>
                     </div>
@@ -146,9 +158,11 @@
             <h3 class="text-xl font-bold mb-4">Количество</h3>
             <p id="modalProductName" class="mb-3 font-semibold"></p>
             <div class="mb-2">
-                <p class="text-sm text-gray-500">Наличност: <span id="modalAvailableQty" class="font-semibold text-green-600">0</span></p>
+                <p class="text-sm text-gray-500">Наличност: <span id="modalAvailableQty"
+                        class="font-semibold text-green-600">0</span></p>
             </div>
-            <input type="text" id="modalQuantity" value="1" class="w-full text-center text-2xl border rounded-xl p-3 mb-3">
+            <input type="text" id="modalQuantity" value="1"
+                class="w-full text-center text-2xl border rounded-xl p-3 mb-3">
             <div class="grid grid-cols-4 gap-2 mb-4">
                 <button onclick="setQuantity(0.5)" class="bg-gray-100 py-2 rounded">0.5</button>
                 <button onclick="setQuantity(1)" class="bg-gray-100 py-2 rounded">1</button>
@@ -156,7 +170,8 @@
                 <button onclick="setQuantity(3)" class="bg-gray-100 py-2 rounded">3</button>
             </div>
             <div class="flex gap-2">
-                <button onclick="confirmAddToSession()" class="flex-1 bg-green-600 text-white py-2 rounded-xl">Добави</button>
+                <button onclick="confirmAddToSession()"
+                    class="flex-1 bg-green-600 text-white py-2 rounded-xl">Добави</button>
                 <button onclick="closeQuantityModal()" class="flex-1 bg-gray-300 py-2 rounded-xl">Отказ</button>
             </div>
         </div>
@@ -192,13 +207,34 @@
 
         function getProductIcon(name) {
             const icons = {
-                'хляб': '🍞', 'мляко': '🥛', 'сирене': '🧀', 'кашкавал': '🧀',
-                'месо': '🍖', 'говеждо': '🥩', 'свинско': '🍖', 'пилешко': '🍗',
-                'риба': '🐟', 'паста': '🍝', 'ориз': '🍚', 'зеленчук': '🥬',
-                'домати': '🍅', 'краставица': '🥒', 'пипер': '🫑', 'плод': '🍎',
-                'ябълка': '🍎', 'банан': '🍌', 'портокал': '🍊', 'сок': '🥤',
-                'вода': '💧', 'бира': '🍺', 'вино': '🍷', 'кафе': '☕',
-                'пица': '🍕', 'салата': '🥗', 'супа': '🥣', 'десерт': '🍰'
+                'хляб': '🍞',
+                'мляко': '🥛',
+                'сирене': '🧀',
+                'кашкавал': '🧀',
+                'месо': '🍖',
+                'говеждо': '🥩',
+                'свинско': '🍖',
+                'пилешко': '🍗',
+                'риба': '🐟',
+                'паста': '🍝',
+                'ориз': '🍚',
+                'зеленчук': '🥬',
+                'домати': '🍅',
+                'краставица': '🥒',
+                'пипер': '🫑',
+                'плод': '🍎',
+                'ябълка': '🍎',
+                'банан': '🍌',
+                'портокал': '🍊',
+                'сок': '🥤',
+                'вода': '💧',
+                'бира': '🍺',
+                'вино': '🍷',
+                'кафе': '☕',
+                'пица': '🍕',
+                'салата': '🥗',
+                'супа': '🥣',
+                'десерт': '🍰'
             };
             for (let [key, icon] of Object.entries(icons)) {
                 if (name.toLowerCase().includes(key)) return icon;
@@ -230,23 +266,31 @@
                     return;
                 }
 
-                $('#productsGrid').html('<div class="col-span-full text-center py-12"><i class="fas fa-spinner fa-spin text-3xl text-green-600"></i><p class="mt-2 text-gray-500">Търсене...</p></div>');
+                $('#productsGrid').html(
+                    '<div class="col-span-full text-center py-12"><i class="fas fa-spinner fa-spin text-3xl text-green-600"></i><p class="mt-2 text-gray-500">Търсене...</p></div>'
+                    );
 
                 searchTimeout = setTimeout(() => {
-                    $.get(`/shopping-mall/search-products?search=${encodeURIComponent(search)}`, function(products) {
-                        if (products.length === 0) {
-                            $('#productsGrid').html('<div class="col-span-full text-center py-12"><i class="fas fa-search text-4xl text-gray-400 mb-2"></i><p class="text-gray-500">Няма намерени продукти</p></div>');
-                            return;
-                        }
+                    $.get(`/shopping-mall/search-products?search=${encodeURIComponent(search)}`,
+                        function(products) {
+                            if (products.length === 0) {
+                                $('#productsGrid').html(
+                                    '<div class="col-span-full text-center py-12"><i class="fas fa-search text-4xl text-gray-400 mb-2"></i><p class="text-gray-500">Няма намерени продукти</p></div>'
+                                    );
+                                return;
+                            }
 
-                        let html = '<div class="grid grid-cols-2 md:grid-cols-3 gap-4">';
-                        products.forEach(p => {
-                            const availableQty = p.available_qty || 0;
-                            const stockBadge = availableQty <= 0 ? '<div class="text-xs text-red-500 mt-1">✗ Няма наличност</div>' :
-                                (availableQty < 5 ? `<div class="text-xs text-orange-500 mt-1">⚠️ Остава: ${availableQty}</div>` :
-                                `<div class="text-xs text-green-500 mt-1">✓ Налично: ${availableQty}</div>`);
+                            let html = '<div class="grid grid-cols-2 md:grid-cols-3 gap-4">';
+                            products.forEach(p => {
+                                const availableQty = p.available_qty || 0;
+                                const stockBadge = availableQty <= 0 ?
+                                    '<div class="text-xs text-red-500 mt-1">✗ Няма наличност</div>' :
+                                    (availableQty < 5 ?
+                                        `<div class="text-xs text-orange-500 mt-1">⚠️ Остава: ${availableQty}</div>` :
+                                        `<div class="text-xs text-green-500 mt-1">✓ Налично: ${availableQty}</div>`
+                                        );
 
-                            html += `
+                                html += `
                                 <div class="product-card bg-white border-2 border-gray-100 hover:border-green-500 rounded-2xl p-3 cursor-pointer transition-all hover:shadow-lg text-center"
                                      data-product-id="${p.id}"
                                      data-product-name="${escapeHtml(p.name).replace(/'/g, "\\'")}"
@@ -261,10 +305,10 @@
                                     ${stockBadge}
                                 </div>
                             `;
+                            });
+                            html += '</div>';
+                            $('#productsGrid').html(html);
                         });
-                        html += '</div>';
-                        $('#productsGrid').html(html);
-                    });
                 }, 500);
             });
         });
@@ -285,10 +329,12 @@
 
                 let customerInfo = '';
                 if (data.session.customer_name) {
-                    customerInfo += `<div class="text-gray-600 mt-1"><i class="fas fa-user"></i> ${escapeHtml(data.session.customer_name)}</div>`;
+                    customerInfo +=
+                        `<div class="text-gray-600 mt-1"><i class="fas fa-user"></i> ${escapeHtml(data.session.customer_name)}</div>`;
                 }
                 if (data.session.customer_phone) {
-                    customerInfo += `<div class="text-gray-500 text-sm"><i class="fas fa-phone"></i> ${escapeHtml(data.session.customer_phone)}</div>`;
+                    customerInfo +=
+                        `<div class="text-gray-500 text-sm"><i class="fas fa-phone"></i> ${escapeHtml(data.session.customer_phone)}</div>`;
                 }
 
                 $('#sessionInfo').html(`
@@ -324,11 +370,11 @@
                                     <div class="text-right">
                                         <div class="font-semibold">${parseFloat(item.total_price).toFixed(2)} €</div>
                                         ${item.kiosk_id == currentKioskId ? `
-                                        <div class="flex gap-1 mt-2">
-                                            <button onclick="editItemQuantity(${item.id})" class="text-blue-500 text-sm">✏️</button>
-                                            <button onclick="removeItem(${item.id})" class="text-red-500 text-sm">🗑️</button>
-                                        </div>
-                                        ` : ''}
+                                            <div class="flex gap-1 mt-2">
+                                                <button onclick="editItemQuantity(${item.id})" class="text-blue-500 text-sm">✏️</button>
+                                                <button onclick="removeItem(${item.id})" class="text-red-500 text-sm">🗑️</button>
+                                            </div>
+                                            ` : ''}
                                     </div>
                                 </div>
                             </div>
@@ -347,7 +393,8 @@
             $.get('/shopping-mall/sessions', function(sessions) {
                 let html = '';
                 if (sessions.length === 0) {
-                    html = '<div class="text-center text-gray-400 py-12"><i class="fas fa-inbox text-4xl mb-2"></i><p>Няма активни сметки</p><button onclick="openCreateSessionModal()" class="mt-3 text-green-600 hover:underline">Създайте първата сметка</button></div>';
+                    html =
+                        '<div class="text-center text-gray-400 py-12"><i class="fas fa-inbox text-4xl mb-2"></i><p>Няма активни сметки</p><button onclick="openCreateSessionModal()" class="mt-3 text-green-600 hover:underline">Създайте първата сметка</button></div>';
                     $('#sessionsCount').text('0 отворени');
                 } else {
                     sessions.forEach(session => {
@@ -392,8 +439,14 @@
             $('#quantityModal').removeClass('hidden');
         }
 
-        function setQuantity(qty) { $('#modalQuantity').val(qty); }
-        function closeQuantityModal() { $('#quantityModal').addClass('hidden'); selectedProductData = null; }
+        function setQuantity(qty) {
+            $('#modalQuantity').val(qty);
+        }
+
+        function closeQuantityModal() {
+            $('#quantityModal').addClass('hidden');
+            selectedProductData = null;
+        }
 
         function confirmAddToSession() {
             let quantity = parseFloat($('#modalQuantity').val().replace(',', '.'));
@@ -402,7 +455,8 @@
                 return;
             }
             if (quantity > selectedProductData.availableQty) {
-                alert(`Няма достатъчна наличност! Максимално: ${selectedProductData.availableQty} ${selectedProductData.unit}`);
+                alert(
+                    `Няма достатъчна наличност! Максимално: ${selectedProductData.availableQty} ${selectedProductData.unit}`);
                 return;
             }
             $.ajax({
@@ -434,8 +488,16 @@
                 $.ajax({
                     url: `/shopping-mall/items/${itemId}`,
                     method: 'PUT',
-                    data: { quantity: parseFloat(newQty), _token: $('meta[name="csrf-token"]').attr('content') },
-                    success: function(res) { if (res.success) { loadSessionDetails(currentSessionToken); refreshSessionsList(); } }
+                    data: {
+                        quantity: parseFloat(newQty),
+                        _token: $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(res) {
+                        if (res.success) {
+                            loadSessionDetails(currentSessionToken);
+                            refreshSessionsList();
+                        }
+                    }
                 });
             }
         }
@@ -445,32 +507,62 @@
                 $.ajax({
                     url: `/shopping-mall/items/${itemId}`,
                     method: 'DELETE',
-                    data: { _token: $('meta[name="csrf-token"]').attr('content') },
-                    success: function(res) { if (res.success) { loadSessionDetails(currentSessionToken); refreshSessionsList(); } }
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(res) {
+                        if (res.success) {
+                            loadSessionDetails(currentSessionToken);
+                            refreshSessionsList();
+                        }
+                    }
                 });
             }
         }
 
         // ========== ФУНКЦИИ ЗА БЕЛЕЖКА ==========
-        function openCreateSessionModal() { $('#createSessionModal').removeClass('hidden'); }
-        function closeCreateSessionModal() { $('#createSessionModal').addClass('hidden'); }
+        function openCreateSessionModal() {
+            $('#createSessionModal').removeClass('hidden');
+        }
+
+        function closeCreateSessionModal() {
+            $('#createSessionModal').addClass('hidden');
+        }
+
         function createSession() {
             $.post('/shopping-mall/sessions', {
                 customer_name: $('#customerName').val(),
                 customer_phone: $('#customerPhone').val(),
                 note: $('#sessionNote').val(),
                 _token: $('meta[name="csrf-token"]').attr('content')
-            }, function(res) { if (res.success) location.reload(); });
+            }, function(res) {
+                if (res.success) location.reload();
+            });
         }
 
-        function openNoteModal() { $('#noteText').val(currentSessionData?.note || ''); $('#noteModal').removeClass('hidden'); }
-        function closeNoteModal() { $('#noteModal').addClass('hidden'); }
+        function openNoteModal() {
+            $('#noteText').val(currentSessionData?.note || '');
+            $('#noteModal').removeClass('hidden');
+        }
+
+        function closeNoteModal() {
+            $('#noteModal').addClass('hidden');
+        }
+
         function saveNote() {
             $.ajax({
                 url: `/shopping-mall/sessions/${currentSessionData.id}/note`,
                 method: 'PUT',
-                data: { note: $('#noteText').val(), _token: $('meta[name="csrf-token"]').attr('content') },
-                success: function(res) { if (res.success) { loadSessionDetails(currentSessionToken); closeNoteModal(); } }
+                data: {
+                    note: $('#noteText').val(),
+                    _token: $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(res) {
+                    if (res.success) {
+                        loadSessionDetails(currentSessionToken);
+                        closeNoteModal();
+                    }
+                }
             });
         }
 
@@ -479,8 +571,12 @@
                 $.ajax({
                     url: `/shopping-mall/sessions/${currentSessionData.id}`,
                     method: 'DELETE',
-                    data: { _token: $('meta[name="csrf-token"]').attr('content') },
-                    success: function(res) { if (res.success) location.reload(); }
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(res) {
+                        if (res.success) location.reload();
+                    }
                 });
             }
         }
