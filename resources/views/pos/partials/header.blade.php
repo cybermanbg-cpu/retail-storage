@@ -1,22 +1,25 @@
-<div class="flex justify-between items-center mb-6">
-    <h1 class="text-3xl font-bold text-gray-800">
-        <i class="fas fa-cash-register text-green-600"></i> POS Система
-    </h1>
-    <div class="flex items-center space-x-4">
-        <button id="newCartBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition">
-            <i class="fas fa-plus mr-2"></i> Нова количка
-        </button>
-        <div class="text-sm text-gray-600 bg-white px-4 py-2 rounded-lg shadow">
-            Обект: <span class="font-semibold">{{ $storageObject->name }}</span>
+<div class="flex justify-between items-center mb-4 bg-white p-4 rounded-2xl shadow flex-shrink-0">
+    <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2">
+            <i class="fas fa-cash-register text-green-600"></i>
+            <span class="font-bold">POS Система</span>
+            <div class="h-4 w-px bg-gray-300"></div>
+            <div class="text-gray-600">📍 {{ $storageObject->name }}</div>
+            <div class="h-4 w-px bg-gray-300"></div>
+            <div class="text-gray-600">👤 {{ Auth::user()->name }}</div>
         </div>
-        <a href="{{ route('home') }}" 
-           class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition flex items-center gap-2">
-            <i class="fas fa-home"></i> Начало
+    </div>
+
+    <div class="flex items-center gap-2">
+        <button id="newCartBtn" class="text-gray-500 hover:text-blue-600 p-2 rounded-lg transition" title="Нова сметка">
+            <i class="fas fa-plus-circle text-xl"></i>
+        </button>
+        <a href="{{ route('home') }}" class="text-gray-500 hover:text-blue-600 p-2 rounded-lg transition" title="Начало">
+            <i class="fas fa-home text-xl"></i>
         </a>
-        <a href="{{ route('logout') }}" 
-           class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition flex items-center gap-2"
-           onclick="event.preventDefault(); document.getElementById('logout-form-pos').submit();">
-            <i class="fas fa-sign-out-alt"></i> Изход
+        <a href="{{ route('logout') }}" class="text-gray-500 hover:text-red-600 p-2 rounded-lg transition" 
+           onclick="event.preventDefault(); document.getElementById('logout-form-pos').submit();" title="Изход">
+            <i class="fas fa-sign-out-alt text-xl"></i>
         </a>
         <form id="logout-form-pos" action="{{ route('logout') }}" method="GET" style="display: none;">
             @csrf

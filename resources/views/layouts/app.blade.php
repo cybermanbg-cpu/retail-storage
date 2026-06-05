@@ -220,40 +220,27 @@
     @hasSection('hide_footer')
         <!-- Футерът е скрит -->
     @else
-        <footer class="bg-gray-800 text-white mt-auto">
-            <div class="container mx-auto px-4 py-8">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div>
-                        <h3 class="text-lg font-semibold mb-3">Retail Storage System</h3>
-                        <p class="text-gray-400 text-sm">Модерна система за управление на продажби и складови
-                            наличности
-                        </p>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-semibold mb-3">Бързи връзки</h3>
-                        <ul class="space-y-2 text-sm">
-                            <li><a href="{{ route('home') }}"
-                                    class="text-gray-400 hover:text-white transition">Начало</a></li>
-                            <li><a href="{{ route('pos.index') }}"
-                                    class="text-gray-400 hover:text-white transition">POS Система</a></li>
-                            <li><a href="{{ route('reports.index') }}"
-                                    class="text-gray-400 hover:text-white transition">Доклади</a></li>
-                            <li><a href="{{ url('/admin') }}"
-                                    class="text-gray-400 hover:text-white transition">Администрация</a></li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-semibold mb-3">Контакти</h3>
-                        <p class="text-gray-400 text-sm">email: info@retailstorage.com</p>
-                        <p class="text-gray-400 text-sm">тел: 0888 123 456</p>
-                    </div>
-                </div>
-                <div class="border-t border-gray-700 mt-6 pt-6 text-center text-gray-400 text-sm">
-                    <p>&copy; 2026 Retail Storage System. Всички права запазени.</p>
-                </div>
+<footer class="bg-gray-800 text-white mt-auto py-6 border-t border-gray-700">
+    <div class="container mx-auto px-4">
+        <div class="flex flex-col md:flex-row justify-between items-center gap-3 text-sm">
+            <div class="text-gray-400">
+                <i class="fas fa-code-branch mr-1"></i> Идеен проект и създател
             </div>
-        </footer>
-    @endif
+            <div class="font-medium text-gray-300">
+                Радослав Радулов
+            </div>
+            <div>
+                <a href="mailto:rado.radulov@me.com" class="text-gray-400 hover:text-white transition">
+                    <i class="fas fa-envelope mr-1"></i> rado.radulov@me.com
+                </a>
+            </div>
+        </div>
+        <div class="text-center text-xs text-gray-500 mt-4 pt-3 border-t border-gray-700">
+            &copy; 2026 Retail Storage System. Всички права запазени.
+        </div>
+    </div>
+</footer>
+@endif
 
     <script>
         document.getElementById('mobile-menu-button')?.addEventListener('click', function() {

@@ -30,14 +30,25 @@ class PosController extends Controller
 
     public function index()
     {
-        // Вземаме всички активни продукти (с и без варианти)
+        $user = Auth::user();
+
+        // Вземаме складовия обект на потребителя
+        $storageObject = $this->getCurrentStorageObject();
+
+        if (!$storageObject) {
+            return redirect()->back()->with('error', 'Нямате асоцииран складов обект. Моля, свържете се с администратор.');
+        }
+
+        // Вземаме всички активни продукти за този склад
         $products = Product::with(['variants.color', 'variants.size', 'unitOfMeasure'])
             ->where('type', 'product')
             ->where('is_active', true)
+            ->where('owner_id', $user->owner_id ?? $this->getCurrentOwnerId())
             ->get();
 
-        $clients = Client::where('is_active', true)->get();
-        $storageObject = StorageObject::first();
+        $clients = Client::where('is_active', true)
+            ->where('owner_id', $user->owner_id ?? $this->getCurrentOwnerId())
+            ->get();
 
         $activeCarts = $this->cartService->getActiveCarts();
         $currentCart = $activeCarts->first();
@@ -121,9 +132,15 @@ class PosController extends Controller
         try {
             DB::beginTransaction();
 
+            // Вземаме складовия обект на потребителя
+            $storageObject = $this->getCurrentStorageObject();
+
+            if (!$storageObject) {
+                return response()->json(['success' => false, 'message' => 'Нямате асоцииран складов обект'], 400);
+            }
+
             $data = $request->validate([
                 'cart_id' => 'required|exists:active_carts,id',
-                'storage_object_id' => 'required|exists:storage_objects,id',
                 'client_id' => 'nullable|exists:clients,id',
                 'payment_method' => 'required|in:cash,card,bank_transfer',
                 'amount_paid' => 'required|numeric|min:0',
@@ -133,6 +150,9 @@ class PosController extends Controller
                 'items.*.quantity' => 'required|numeric|min:0.001',
                 'items.*.unit_price' => 'required|numeric|min:0',
             ]);
+
+            // Използваме складовия обект на потребителя
+            $data['storage_object_id'] = $storageObject->id;
 
             $cart = ActiveCart::where('user_id', Auth::id())
                 ->where('id', $data['cart_id'])
@@ -332,14 +352,24 @@ class PosController extends Controller
      */
     public function restaurantPos()
     {
+        $user = Auth::user();
+
+        // Вземаме складовия обект на потребителя
+        $storageObject = $this->getCurrentStorageObject();
+
+        if (!$storageObject) {
+            return redirect()->back()->with('error', 'Нямате асоцииран складов обект. Моля, свържете се с администратор.');
+        }
+
         $categories = Category::where('is_active', true)
             ->where('show_in_restaurant_pos', true)
-            ->where('owner_id', $this->getCurrentOwnerId())
+            ->where('owner_id', $user->owner_id ?? $this->getCurrentOwnerId())
             ->orderBy('sort_order')
             ->get();
 
-        $clients = Client::where('is_active', true)->get();
-        $storageObject = StorageObject::first();
+        $clients = Client::where('is_active', true)
+            ->where('owner_id', $user->owner_id ?? $this->getCurrentOwnerId())
+            ->get();
 
         // Вземаме активните колички за ресторанта
         $activeCarts = $this->cartService->getActiveCarts();
@@ -357,9 +387,17 @@ class PosController extends Controller
      */
     public function productsByCategory($categoryId)
     {
-        $category = Category::with('products')->findOrFail($categoryId);
+        $user = Auth::user();
 
-        $storageObjectId = StorageObject::first()->id;
+        // Вземаме складовия обект на потребителя
+        $storageObject = $this->getCurrentStorageObject();
+
+        if (!$storageObject) {
+            return response()->json([]);
+        }
+
+        $category = Category::with('products')->findOrFail($categoryId);
+        $storageObjectId = $storageObject->id;
 
         $products = $category->products->filter(function ($product) use ($storageObjectId) {
             $variant = $product->variants()->first();
@@ -402,10 +440,16 @@ class PosController extends Controller
         try {
             DB::beginTransaction();
 
+            // Вземаме складовия обект на потребителя
+            $storageObject = $this->getCurrentStorageObject();
+
+            if (!$storageObject) {
+                return response()->json(['success' => false, 'message' => 'Нямате асоцииран складов обект'], 400);
+            }
+
             $data = $request->validate([
                 'cart_id' => 'required|exists:active_carts,id',
                 'client_id' => 'nullable|exists:clients,id',
-                'storage_object_id' => 'required|exists:storage_objects,id',
                 'items' => 'required|array',
                 'items.*.product_id' => 'required|exists:products,id',
                 'items.*.quantity' => 'required|numeric|min:0.001',
@@ -415,6 +459,9 @@ class PosController extends Controller
                 'amount_paid' => 'nullable|numeric|min:0',
                 'change_amount' => 'nullable|numeric|min:0',
             ]);
+
+            // Използваме складовия обект на потребителя
+            $data['storage_object_id'] = $storageObject->id;
 
             $cart = ActiveCart::where('user_id', Auth::id())
                 ->where('id', $data['cart_id'])
@@ -549,11 +596,20 @@ class PosController extends Controller
 
     public function allProducts()
     {
-        $storageObjectId = StorageObject::first()->id;
+        $user = Auth::user();
+
+        // Вземаме складовия обект на потребителя
+        $storageObject = $this->getCurrentStorageObject();
+
+        if (!$storageObject) {
+            return response()->json([]);
+        }
+
+        $storageObjectId = $storageObject->id;
 
         $products = Product::where('type', 'product')
             ->where('is_active', true)
-            ->where('owner_id', $this->getCurrentOwnerId())
+            ->where('owner_id', $user->owner_id ?? $this->getCurrentOwnerId())
             ->get()
             ->filter(function ($product) use ($storageObjectId) {
                 $variant = $product->variants()->first();
@@ -581,10 +637,39 @@ class PosController extends Controller
                     'discounted_price' => round($product->base_price - ($product->base_price * $maxDiscount / 100), 2),
                     'discount_percent' => $maxDiscount,
                     'available_quantity' => $stock ? $stock->quantity : 0,
+                    'unit' => $product->unitOfMeasure?->symbol ?? 'бр.',
                 ];
             });
 
-        // ⭐ ГАРАНТИРАМЕ, ЧЕ ВРЪЩАМЕ МАСИВ ⭐
         return response()->json($products->values());
+    }
+
+    /**
+     * Взема текущия складов обект на потребителя
+     */
+    private function getCurrentStorageObject()
+    {
+        $user = Auth::user();
+
+        // Ако потребителят има директен складов обект
+        if ($user->storage_object_id) {
+            $storageObject = StorageObject::find($user->storage_object_id);
+            if ($storageObject && $storageObject->is_active) {
+                return $storageObject;
+            }
+        }
+
+        // За super_admin, взимаме първия активен склад на текущия собственик
+        if ($user->hasRole('super_admin')) {
+            $ownerId = $this->getCurrentOwnerId();
+            $storageObject = StorageObject::where('owner_id', $ownerId)
+                ->where('is_active', true)
+                ->first();
+            if ($storageObject) {
+                return $storageObject;
+            }
+        }
+
+        return null;
     }
 }

@@ -2,9 +2,11 @@
 
 @section('title', 'POS Система - Продажби')
 
+@section('hide_navigation', true)
+
 @section('content')
 <div id="pos-app">
-    <div class="container mx-auto px-4 py-8">
+    <div class="container-fluid px-4 py-3 h-screen flex flex-col">
         @include('pos.partials.header')
         
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
