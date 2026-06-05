@@ -212,6 +212,68 @@
         </nav>
     @endif
 
+    <!-- ⭐ ТУК СЕКЦИЯ ЗА ФЛАШ СЪОБЩЕНИЯ ⭐ -->
+    @if (session('success'))
+        <div class="container mx-auto px-4 mt-4">
+            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-md flex justify-between items-center"
+                role="alert">
+                <div>
+                    <i class="fas fa-check-circle mr-2"></i>
+                    {{ session('success') }}
+                </div>
+                <button onclick="this.parentElement.remove()" class="text-green-700 hover:text-green-900">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    @endif
+
+    @if (session('error'))
+        <div class="container mx-auto px-4 mt-4">
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-md flex justify-between items-center"
+                role="alert">
+                <div>
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    {{ session('error') }}
+                </div>
+                <button onclick="this.parentElement.remove()" class="text-red-700 hover:text-red-900">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    @endif
+
+    @if (session('warning'))
+        <div class="container mx-auto px-4 mt-4">
+            <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded shadow-md flex justify-between items-center"
+                role="alert">
+                <div>
+                    <i class="fas fa-exclamation-circle mr-2"></i>
+                    {{ session('warning') }}
+                </div>
+                <button onclick="this.parentElement.remove()" class="text-yellow-700 hover:text-yellow-900">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    @endif
+
+    @if ($errors->any())
+        <div class="container mx-auto px-4 mt-4">
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-md">
+                <div class="font-bold mb-2">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    Моля, поправете следните грешки:
+                </div>
+                <ul class="list-disc list-inside text-sm">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+    @endif
+
     <main>
         @yield('content')
     </main>
@@ -220,27 +282,27 @@
     @hasSection('hide_footer')
         <!-- Футерът е скрит -->
     @else
-<footer class="bg-gray-800 text-white mt-auto py-6 border-t border-gray-700">
-    <div class="container mx-auto px-4">
-        <div class="flex flex-col md:flex-row justify-between items-center gap-3 text-sm">
-            <div class="text-gray-400">
-                <i class="fas fa-code-branch mr-1"></i> Идеен проект и създател
+        <footer class="bg-gray-800 text-white mt-auto py-6 border-t border-gray-700">
+            <div class="container mx-auto px-4">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-3 text-sm">
+                    <div class="text-gray-400">
+                        <i class="fas fa-code-branch mr-1"></i> Идеен проект и създател
+                    </div>
+                    <div class="font-medium text-gray-300">
+                        Радослав Радулов
+                    </div>
+                    <div>
+                        <a href="mailto:rado.radulov@me.com" class="text-gray-400 hover:text-white transition">
+                            <i class="fas fa-envelope mr-1"></i> rado.radulov@me.com
+                        </a>
+                    </div>
+                </div>
+                <div class="text-center text-xs text-gray-500 mt-4 pt-3 border-t border-gray-700">
+                    &copy; 2026 Retail Storage System. Всички права запазени.
+                </div>
             </div>
-            <div class="font-medium text-gray-300">
-                Радослав Радулов
-            </div>
-            <div>
-                <a href="mailto:rado.radulov@me.com" class="text-gray-400 hover:text-white transition">
-                    <i class="fas fa-envelope mr-1"></i> rado.radulov@me.com
-                </a>
-            </div>
-        </div>
-        <div class="text-center text-xs text-gray-500 mt-4 pt-3 border-t border-gray-700">
-            &copy; 2026 Retail Storage System. Всички права запазени.
-        </div>
-    </div>
-</footer>
-@endif
+        </footer>
+    @endif
 
     <script>
         document.getElementById('mobile-menu-button')?.addEventListener('click', function() {

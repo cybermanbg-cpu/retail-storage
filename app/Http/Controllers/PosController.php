@@ -136,7 +136,7 @@ class PosController extends Controller
             $storageObject = $this->getCurrentStorageObject();
 
             if (!$storageObject) {
-                return response()->json(['success' => false, 'message' => 'Нямате асоцииран складов обект'], 400);
+                return response()->json(['success' => false, 'message' => 'Нямате асоцииран складов обект. Моля, свържете се с администратор.'], 400);
             }
 
             $data = $request->validate([
@@ -444,7 +444,7 @@ class PosController extends Controller
             $storageObject = $this->getCurrentStorageObject();
 
             if (!$storageObject) {
-                return response()->json(['success' => false, 'message' => 'Нямате асоцииран складов обект'], 400);
+                return response()->json(['success' => false, 'message' => 'Нямате асоцииран складов обект. Моля, свържете се с администратор.'], 400);
             }
 
             $data = $request->validate([
@@ -647,6 +647,9 @@ class PosController extends Controller
     /**
      * Взема текущия складов обект на потребителя
      */
+    /**
+     * Взема текущия складов обект на потребителя
+     */
     private function getCurrentStorageObject()
     {
         $user = Auth::user();
@@ -671,5 +674,17 @@ class PosController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Взема ID на текущия складов обект
+     */
+    private function getCurrentStorageObjectId(): int
+    {
+        $storageObject = $this->getCurrentStorageObject();
+        if (!$storageObject) {
+            abort(403, 'Нямате асоцииран складов обект. Моля, свържете се с администратор.');
+        }
+        return $storageObject->id;
     }
 }
