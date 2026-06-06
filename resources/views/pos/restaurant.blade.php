@@ -313,7 +313,7 @@
             if (name.includes('банан')) return '🍌';
             if (name.includes('портокал')) return '🍊';
             
-            return '🥗';
+            return '📦';
         };
     </script>
     
