@@ -62,8 +62,9 @@
                 <div class="p-3 md:p-4 border-b flex-shrink-0">
                     <div class="flex justify-between items-center">
                         <h2 class="text-base md:text-xl font-bold">Категории</h2>
-                        <button onclick="showAllProducts()"
-                            class="text-xs md:text-sm text-primary-600 hover:underline">Всички</button>
+                        <button onclick="showAllProducts()" class="text-xs md:text-sm text-primary-600 hover:underline">
+                            Всички
+                        </button>
                     </div>
                 </div>
                 <div class="flex-1 overflow-y-auto p-2 md:p-4 min-h-0">
@@ -278,20 +279,20 @@
         // ⭐ ДИРЕКТНА ФУНКЦИЯ ЗА ИКОНИ В JS ⭐
         window.getProductIcon = function(productName) {
             const name = productName.toLowerCase();
-            
+
             // Зеленчуци
             if (name.includes('домат')) return '🍅';
             if (name.includes('краставиц')) return '🥒';
             if (name.includes('пипер')) return '🫑';
             if (name.includes('чушк')) return '🫑';
-            
+
             // Месо и риба
             if (name.includes('пилешк')) return '🍗';
             if (name.includes('месо')) return '🍖';
             if (name.includes('говежд')) return '🥩';
             if (name.includes('свинск')) return '🍖';
             if (name.includes('риба')) return '🐟';
-            
+
             // Храна и напитки
             if (name.includes('кафе')) return '☕';
             if (name.includes('чай')) return '🍵';
@@ -307,22 +308,22 @@
             if (name.includes('вода')) return '💧';
             if (name.includes('пица')) return '🍕';
             if (name.includes('паста')) return '🍝';
-            
+
             // Плодове
             if (name.includes('ябълк')) return '🍎';
             if (name.includes('банан')) return '🍌';
             if (name.includes('портокал')) return '🍊';
-            
+
             return '📦';
         };
     </script>
-    
+
     <script src="{{ asset('js/restaurant-pos.js') }}"></script>
-    
+
     <script>
         $(document).ready(function() {
             var cartItems = @json($currentCart->items ?? []);
-            
+
             initRestaurantPOS(
                 {{ $storageObject->id }},
                 {{ $currentCart->id ?? 'null' }},

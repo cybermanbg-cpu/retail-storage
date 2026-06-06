@@ -42,9 +42,11 @@ Route::prefix('pos')->middleware(['auth'])->group(function () {
 // Restaurant POS маршрути
 Route::middleware(['auth'])->group(function () {
     Route::get('/restaurant-pos', [PosController::class, 'restaurantPos'])->name('restaurant.pos');
-    Route::get('/pos/all-products', [PosController::class, 'allProducts']);
+   Route::get('/pos/all-restaurant-products', [PosController::class, 'allRestaurantProducts'])
+         ->name('pos.all-restaurant-products');
     Route::get('/pos/products-by-category/{categoryId}', [PosController::class, 'productsByCategory'])->name('pos.products-by-category');
     Route::post('/pos/restaurant-receipt', [PosController::class, 'restaurantReceipt'])->name('pos.restaurant-receipt');
+    Route::get('/pos/search-restaurant-products', [PosController::class, 'searchRestaurantProducts'])->name('pos.search-restaurant');
 });
 
 // ========================================

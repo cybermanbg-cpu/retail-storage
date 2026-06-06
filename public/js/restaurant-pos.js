@@ -164,14 +164,12 @@ function attachGlobalEvents() {
         if (e.key === 'Escape' && !$('#quantityModal').hasClass('hidden')) closeQuantityModal();
     });
 
-    // Търсене
     // Търсене на продукти за Restaurant POS
     let searchTimeout;
     $('#searchInput').off('input').on('input', function () {
         clearTimeout(searchTimeout);
         let search = $(this).val().trim();
 
-        // Ако полето е празно, показваме продуктите от текущата категория
         if (search.length === 0) {
             if (currentCategoryId) {
                 loadProducts(currentCategoryId);
@@ -181,19 +179,18 @@ function attachGlobalEvents() {
             return;
         }
 
-        // Ако има по-малко от 2 символа, не търсим
-        if (search.length < 2) {
-            return;
-        }
+        if (search.length < 3) return;
 
-        // Показваме индикатор за зареждане
         $('#productsGrid').html('<div class="col-span-full text-center py-12"><i class="fas fa-spinner fa-spin text-3xl text-primary-600"></i><p class="mt-2 text-gray-500">Търсене...</p></div>');
 
         searchTimeout = setTimeout(() => {
             let url = `/pos/search-restaurant-products?search=${encodeURIComponent(search)}`;
+
+            // Добавяме category_id САМО ако има избрана категория
             if (currentCategoryId) {
                 url += `&category_id=${currentCategoryId}`;
             }
+            // Ако currentCategoryId === null → търсим във ВСИЧКИ ресторантски продукти
 
             $.get(url)
                 .done(function (products) {
@@ -203,8 +200,7 @@ function attachGlobalEvents() {
                     }
                     displayProducts(products);
                 })
-                .fail(function (error) {
-                    console.error('Search error:', error);
+                .fail(function () {
                     $('#productsGrid').html('<div class="col-span-full text-center text-red-500 py-12">Грешка при търсене</div>');
                 });
         }, 300);
@@ -225,10 +221,19 @@ function loadProducts(categoryId) {
 }
 
 function showAllProducts() {
-    $.get('/pos/all-products').done(products => {
-        displayProducts(products);
-        $('.category-btn').removeClass('bg-primary-600 text-white shadow-md').addClass('bg-gray-100');
-    });
+    currentCategoryId = null;                    // ←←← МНОГО ВАЖНО!
+
+    $.get('/pos/all-restaurant-products')
+        .done(function (products) {
+            displayProducts(products);
+
+            // Премахваме active клас от всички категории
+            $('.category-btn').removeClass('bg-primary-600 text-white shadow-md')
+                .addClass('bg-gray-100');
+        })
+        .fail(function () {
+            $('#productsGrid').html('<div class="col-span-full text-center text-red-500 py-12">Грешка при зареждане</div>');
+        });
 }
 
 // Проверка дали мерната единица е дробна (кг, л, м)

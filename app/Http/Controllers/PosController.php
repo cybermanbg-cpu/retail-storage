@@ -715,8 +715,66 @@ class PosController extends Controller
     }
 
     /**
-     * Взема текущия складов обект на потребителя
+     * Връща ВСИЧКИ продукти за Restaurant POS
+     * - Само продукти, които са в активни категории
+     * - Само категории с show_in_restaurant_pos = true
+     * - Изолирана функция - не засяга обикновения POS
      */
+    public function allRestaurantProducts()
+    {
+        $storageObject = $this->getCurrentStorageObject();
+        if (!$storageObject) {
+            return response()->json([]);
+        }
+
+        $ownerId = $this->getCurrentOwnerId();
+        $storageObjectId = $storageObject->id;
+
+        $products = Product::with(['variants', 'unitOfMeasure', 'categories'])
+            ->where('type', 'product')
+            ->where('is_active', true)
+            ->where('owner_id', $ownerId)
+            ->whereHas('categories', function ($q) {
+                $q->where('is_active', true)
+                    ->where('show_in_restaurant_pos', true);
+            })
+            ->orderBy('name')
+            ->limit(80)
+            ->get()
+            ->filter(function ($product) use ($storageObjectId) {
+                $variant = $product->variants()->first();
+                if (!$variant)
+                    return false;
+
+                $stock = Stock::where('product_variant_id', $variant->id)
+                    ->where('storage_object_id', $storageObjectId)
+                    ->first();
+
+                return $stock && ($stock->available ?? $stock->quantity) > 0;
+            })
+            ->map(function ($product) use ($storageObjectId) {
+                $variant = $product->variants()->first();
+                $stock = Stock::where('product_variant_id', $variant->id)
+                    ->where('storage_object_id', $storageObjectId)
+                    ->first();
+
+                $maxDiscount = $product->categories->max('default_discount') ?? 0;
+
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'base_price' => $product->base_price,
+                    'discounted_price' => round($product->base_price * (1 - $maxDiscount / 100), 2),
+                    'discount_percent' => $maxDiscount,
+                    'available_quantity' => $stock ? ($stock->available ?? $stock->quantity) : 0,
+                    'unit' => $product->unitOfMeasure?->symbol ?? 'бр.',
+                ];
+            });
+
+        return response()->json($products->values());
+    }
+
+
     /**
      * Взема текущия складов обект на потребителя
      */
