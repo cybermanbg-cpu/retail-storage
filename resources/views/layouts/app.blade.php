@@ -81,12 +81,12 @@
                                 <i class="fas fa-utensils mr-1"></i> Ресторант
                             </a>
                             <a href="{{ route('login') }}"
-                                class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-                                <i class="fas fa-cash-register mr-1"></i> Мол (Каса)
-                            </a>
-                            <a href="{{ route('login') }}"
                                 class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
                                 <i class="fas fa-store mr-1"></i> Мол (Щанд)
+                            </a>
+                            <a href="{{ route('login') }}"
+                                class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                                <i class="fas fa-cash-register mr-1"></i> Мол (Каса)
                             </a>
                             <a href="{{ route('login') }}"
                                 class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition">
