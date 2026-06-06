@@ -17,7 +17,7 @@ class Category extends Model
         'sort_order', 
         'default_discount', 
         'is_active',
-        'show_in_restaurant_pos'  // ⭐ ДОБАВЕНО
+        'show_in_restaurant_pos'
     ];
 
     protected $casts = [

@@ -72,9 +72,14 @@
                             <button
                                 class="category-btn aspect-square flex flex-col items-center justify-center p-2 md:p-4 rounded-2xl transition-all {{ $loop->first ? 'bg-primary-600 text-white shadow-md' : 'bg-gray-100 hover:bg-gray-200' }}"
                                 data-category-id="{{ $category->id }}" data-category-name="{{ $category->name }}">
-                                <i class="{{ $category->icon ?? 'fas fa-tag' }} text-2xl md:text-3xl mb-1 md:mb-2"></i>
+
+                                <div class="text-3xl md:text-4xl mb-1 md:mb-2">
+                                    {{ $category->icon ?? '📁' }}
+                                </div>
+
                                 <span
                                     class="font-medium text-center leading-tight text-xs md:text-sm">{{ Str::limit($category->name, 12) }}</span>
+
                                 @if ($category->default_discount > 0)
                                     <span
                                         class="text-xs mt-1 bg-red-500 text-white px-1 md:px-2 py-0.5 rounded-full">-{{ $category->default_discount }}%</span>
