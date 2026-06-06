@@ -102,7 +102,8 @@
                                 <div class="font-semibold text-sm leading-tight">{{ Str::limit($product['name'], 30) }}
                                 </div>
                                 <div class="text-blue-600 font-bold mt-2">{{ number_format($product['base_price'], 2) }}
-                                    <span class="text-black text-xs">€/{{ $product['unit_symbol'] }}</span></div>
+                                    <span class="text-black text-xs">€/{{ $product['unit_symbol'] }}</span>
+                                </div>
                                 {{-- <div class="text-xs text-gray-400 mt-1">{{ $product['unit_symbol'] }}</div> --}}
                                 {!! $stockBadge !!}
                             </div>
@@ -255,7 +256,7 @@
 
                 $('#productsGrid').html(
                     '<div class="col-span-full text-center py-12"><i class="fas fa-spinner fa-spin text-3xl text-green-600"></i><p class="mt-2 text-gray-500">Търсене...</p></div>'
-                    );
+                );
 
                 searchTimeout = setTimeout(() => {
                     $.get(`/shopping-mall/search-products?search=${encodeURIComponent(search)}`,
@@ -263,7 +264,7 @@
                             if (products.length === 0) {
                                 $('#productsGrid').html(
                                     '<div class="col-span-full text-center py-12"><i class="fas fa-search text-4xl text-gray-400 mb-2"></i><p class="text-gray-500">Няма намерени продукти</p></div>'
-                                    );
+                                );
                                 return;
                             }
 
@@ -275,7 +276,7 @@
                                     (availableQty < 5 ?
                                         `<div class="text-xs text-orange-500 mt-1">⚠️ Остава: ${availableQty}</div>` :
                                         `<div class="text-xs text-green-500 mt-1">✓ Налично: ${availableQty}</div>`
-                                        );
+                                    );
 
                                 html += `
                                 <div class="product-card bg-white border-2 border-gray-100 hover:border-green-500 rounded-2xl p-3 cursor-pointer transition-all hover:shadow-lg text-center"
@@ -352,11 +353,11 @@
                                     <div class="text-right">
                                         <div class="font-semibold">${parseFloat(item.total_price).toFixed(2)} €</div>
                                         ${item.kiosk_id == currentKioskId ? `
-                                            <div class="flex gap-1 mt-2">
-                                                <button onclick="editItemQuantity(${item.id})" class="text-blue-500 text-sm">✏️</button>
-                                                <button onclick="removeItem(${item.id})" class="text-red-500 text-sm">🗑️</button>
-                                            </div>
-                                            ` : ''}
+                                                <div class="flex gap-1 mt-2">
+                                                    <button onclick="editItemQuantity(${item.id})" class="text-blue-500 text-sm">✏️</button>
+                                                    <button onclick="removeItem(${item.id})" class="text-red-500 text-sm">🗑️</button>
+                                                </div>
+                                                ` : ''}
                                     </div>
                                 </div>
                             </div>
@@ -432,7 +433,8 @@
             }
             if (quantity > selectedProductData.availableQty) {
                 alert(
-                    `Няма достатъчна наличност! Максимално: ${selectedProductData.availableQty} ${selectedProductData.unit}`);
+                    `Няма достатъчна наличност! Максимално: ${selectedProductData.availableQty} ${selectedProductData.unit}`
+                    );
                 return;
             }
             $.ajax({
@@ -492,24 +494,65 @@
             $('#createSessionModal').addClass('hidden');
         }
 
-        function createSession() {
+                function createSession() {
+            const customerName = $('#customerName').val().trim();
+            const customerPhone = $('#customerPhone').val().trim();
+            const note = $('#sessionNote').val().trim();
+
             $.post('/shopping-mall/sessions', {
-                customer_name: $('#customerName').val(),
-                customer_phone: $('#customerPhone').val(),
-                note: $('#sessionNote').val(),
+                customer_name: customerName,
+                customer_phone: customerPhone,
+                note: note,
                 _token: $('meta[name="csrf-token"]').attr('content')
             }, function(res) {
-                if (res.success) location.reload();
+                if (res.success) {
+                    closeCreateSessionModal();
+                    
+                    // Ако контролерът връща session_token
+                    if (res.session && res.session.session_token) {
+                        const newToken = res.session.session_token;
+                        currentSessionToken = newToken;
+                        
+                        // Автоматично избираме новата сметка
+                        selectSession(newToken);
+                        
+                        // Опресняваме списъка
+                        refreshSessionsList();
+                    } else {
+                        // Ако не връща token - презареждаме
+                        location.reload();
+                    }
+                } else {
+                    alert(res.message || 'Грешка при създаване на сметка');
+                }
+            }).fail(function(xhr) {
+                alert('Грешка при връзката: ' + (xhr.responseJSON?.message || 'Неизвестна грешка'));
             });
         }
 
-        function openNoteModal() {
-            $('#noteText').val(currentSessionData?.note || '');
-            $('#noteModal').removeClass('hidden');
-            setTimeout(() => {
-                $('#noteText').focus();
-            }, 100);
+        // Enter поддръжка в модала за нова сметка
+        function attachCreateSessionEnterKey() {
+            $('#createSessionModal input, #createSessionModal textarea').off('keypress').on('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+
+                    // Ако сме във textarea (бележка), позволяваме нов ред с Shift+Enter
+                    if ($(this).is('textarea') && e.shiftKey) {
+                        return; // нормално нов ред
+                    }
+
+                    // Във всички останали случаи — създаваме сметката
+                    createSession();
+                }
+            });
         }
+
+        // При отваряне на модала закачаме събитието
+        $(document).on('click', 'button[onclick*="openCreateSessionModal"]', function() {
+            setTimeout(() => {
+                attachCreateSessionEnterKey();
+            }, 200);
+        });
 
         function closeNoteModal() {
             $('#noteModal').addClass('hidden');
