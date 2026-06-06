@@ -520,7 +520,6 @@ class ShoppingMallPosController extends Controller
             ->where('owner_id', $ownerId)
             ->get()
             ->map(function ($product) use ($storageObjectId) {
-                // Вземаме варианта на продукта
                 $variant = $product->variants()->first();
                 $availableQty = 0;
 
@@ -540,6 +539,17 @@ class ShoppingMallPosController extends Controller
                 ];
             });
 
-        return view('pos.shopping-mall-kiosk', compact('products', 'owner', 'storageObject'));
+        // ⭐ ГЕНЕРИРАНЕ НА ИКОНИ ОТ HELPER-А ⭐
+        $allProducts = Product::where('type', 'product')
+            ->where('is_active', true)
+            ->where('owner_id', $ownerId)
+            ->get();
+
+        $productIcons = [];
+        foreach ($allProducts as $product) {
+            $productIcons[$product->name] = getProductIcon($product->name);
+        }
+
+        return view('pos.shopping-mall-kiosk', compact('products', 'owner', 'storageObject', 'productIcons'));
     }
 }

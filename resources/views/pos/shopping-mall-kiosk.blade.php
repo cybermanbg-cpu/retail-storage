@@ -101,9 +101,9 @@
                                 <div class="text-5xl mb-2">{{ getProductIcon($product['name']) }}</div>
                                 <div class="font-semibold text-sm leading-tight">{{ Str::limit($product['name'], 30) }}
                                 </div>
-                                <div class="text-green-600 font-bold mt-2">{{ number_format($product['base_price'], 2) }} €
-                                </div>
-                                <div class="text-xs text-gray-400 mt-1">{{ $product['unit_symbol'] }}</div>
+                                <div class="text-blue-600 font-bold mt-2">{{ number_format($product['base_price'], 2) }}
+                                    <span class="text-black text-xs">€/{{ $product['unit_symbol'] }}</span></div>
+                                {{-- <div class="text-xs text-gray-400 mt-1">{{ $product['unit_symbol'] }}</div> --}}
                                 {!! $stockBadge !!}
                             </div>
                         @endforeach
@@ -191,13 +191,41 @@
 
 @push('scripts')
     <script>
+        // ⭐ ИКОНИТЕ ИДВАТ ОТ PHP HELPER-А ⭐
+        window.productIcons = @json($productIcons ?? []);
+
+        // ⭐ ФУНКЦИЯ ЗА ПОЛУЧАВАНЕ НА ИКОНА ОТ HELPER-А ⭐
+        function getProductIcon(name) {
+            // 1. Търсим точно съвпадение
+            if (window.productIcons && window.productIcons[name]) {
+                return window.productIcons[name];
+            }
+
+            // 2. Търсим по малки букви
+            const lowerName = name.toLowerCase();
+            for (const [productName, icon] of Object.entries(window.productIcons)) {
+                if (productName.toLowerCase() === lowerName) {
+                    return icon;
+                }
+            }
+
+            // 3. Търсим по част от името
+            for (const [productName, icon] of Object.entries(window.productIcons)) {
+                if (lowerName.includes(productName.toLowerCase()) ||
+                    productName.toLowerCase().includes(lowerName)) {
+                    return icon;
+                }
+            }
+
+            return '🥗';
+        }
+
         let currentSessionToken = null;
         let selectedProductData = null;
         let currentSessionData = null;
         let originalProductsHtml = null;
         let searchTimeout;
 
-        // ========== HELPER ФУНКЦИИ ==========
         function escapeHtml(text) {
             if (!text) return '';
             const div = document.createElement('div');
@@ -205,50 +233,11 @@
             return div.innerHTML;
         }
 
-        function getProductIcon(name) {
-            const icons = {
-                'хляб': '🍞',
-                'мляко': '🥛',
-                'сирене': '🧀',
-                'кашкавал': '🧀',
-                'месо': '🍖',
-                'говеждо': '🥩',
-                'свинско': '🍖',
-                'пилешко': '🍗',
-                'риба': '🐟',
-                'паста': '🍝',
-                'ориз': '🍚',
-                'зеленчук': '🥬',
-                'домати': '🍅',
-                'краставица': '🥒',
-                'пипер': '🫑',
-                'плод': '🍎',
-                'ябълка': '🍎',
-                'банан': '🍌',
-                'портокал': '🍊',
-                'сок': '🥤',
-                'вода': '💧',
-                'бира': '🍺',
-                'вино': '🍷',
-                'кафе': '☕',
-                'пица': '🍕',
-                'салата': '🥗',
-                'супа': '🥣',
-                'десерт': '🍰'
-            };
-            for (let [key, icon] of Object.entries(icons)) {
-                if (name.toLowerCase().includes(key)) return icon;
-            }
-            return '📦';
-        }
-
-        // ========== ИНИЦИАЛИЗАЦИЯ ==========
         $(document).ready(function() {
             originalProductsHtml = $('#productsGrid').html();
             refreshSessionsList();
             setInterval(refreshSessionsList, 10000);
 
-            // Търсене на продукти
             $('#searchProducts').on('input', function() {
                 clearTimeout(searchTimeout);
                 let search = $(this).val().trim();
@@ -262,13 +251,11 @@
                     return;
                 }
 
-                if (search.length < 2) {
-                    return;
-                }
+                if (search.length < 2) return;
 
                 $('#productsGrid').html(
                     '<div class="col-span-full text-center py-12"><i class="fas fa-spinner fa-spin text-3xl text-green-600"></i><p class="mt-2 text-gray-500">Търсене...</p></div>'
-                );
+                    );
 
                 searchTimeout = setTimeout(() => {
                     $.get(`/shopping-mall/search-products?search=${encodeURIComponent(search)}`,
@@ -276,7 +263,7 @@
                             if (products.length === 0) {
                                 $('#productsGrid').html(
                                     '<div class="col-span-full text-center py-12"><i class="fas fa-search text-4xl text-gray-400 mb-2"></i><p class="text-gray-500">Няма намерени продукти</p></div>'
-                                );
+                                    );
                                 return;
                             }
 
@@ -288,7 +275,7 @@
                                     (availableQty < 5 ?
                                         `<div class="text-xs text-orange-500 mt-1">⚠️ Остава: ${availableQty}</div>` :
                                         `<div class="text-xs text-green-500 mt-1">✓ Налично: ${availableQty}</div>`
-                                    );
+                                        );
 
                                 html += `
                                 <div class="product-card bg-white border-2 border-gray-100 hover:border-green-500 rounded-2xl p-3 cursor-pointer transition-all hover:shadow-lg text-center"
@@ -301,7 +288,7 @@
                                     <div class="text-5xl mb-2">${getProductIcon(p.name)}</div>
                                     <div class="font-semibold text-sm leading-tight">${escapeHtml(p.name.substring(0, 30))}</div>
                                     <div class="text-green-600 font-bold mt-2">${parseFloat(p.price).toFixed(2)} €</div>
-                                    <div class="text-xs text-gray-400">${p.unit}</div>
+                                    <div class="text-xs text-gray-400 mt-1">${p.unit}</div>
                                     ${stockBadge}
                                 </div>
                             `;
@@ -313,7 +300,6 @@
             });
         });
 
-        // ========== ФУНКЦИИ ЗА СЕСИИ ==========
         function selectSession(token) {
             currentSessionToken = token;
             loadSessionDetails(token);
@@ -328,14 +314,10 @@
                 const currentKioskId = {{ Auth::id() }};
 
                 let customerInfo = '';
-                if (data.session.customer_name) {
-                    customerInfo +=
-                        `<div class="text-gray-600 mt-1"><i class="fas fa-user"></i> ${escapeHtml(data.session.customer_name)}</div>`;
-                }
-                if (data.session.customer_phone) {
-                    customerInfo +=
-                        `<div class="text-gray-500 text-sm"><i class="fas fa-phone"></i> ${escapeHtml(data.session.customer_phone)}</div>`;
-                }
+                if (data.session.customer_name) customerInfo +=
+                    `<div class="text-gray-600 mt-1"><i class="fas fa-user"></i> ${escapeHtml(data.session.customer_name)}</div>`;
+                if (data.session.customer_phone) customerInfo +=
+                    `<div class="text-gray-500 text-sm"><i class="fas fa-phone"></i> ${escapeHtml(data.session.customer_phone)}</div>`;
 
                 $('#sessionInfo').html(`
                     <div class="space-y-2">
@@ -370,11 +352,11 @@
                                     <div class="text-right">
                                         <div class="font-semibold">${parseFloat(item.total_price).toFixed(2)} €</div>
                                         ${item.kiosk_id == currentKioskId ? `
-                                                            <div class="flex gap-1 mt-2">
-                                                                <button onclick="editItemQuantity(${item.id})" class="text-blue-500 text-sm">✏️</button>
-                                                                <button onclick="removeItem(${item.id})" class="text-red-500 text-sm">🗑️</button>
-                                                            </div>
-                                                            ` : ''}
+                                            <div class="flex gap-1 mt-2">
+                                                <button onclick="editItemQuantity(${item.id})" class="text-blue-500 text-sm">✏️</button>
+                                                <button onclick="removeItem(${item.id})" class="text-red-500 text-sm">🗑️</button>
+                                            </div>
+                                            ` : ''}
                                     </div>
                                 </div>
                             </div>
@@ -394,7 +376,7 @@
                 let html = '';
                 if (sessions.length === 0) {
                     html =
-                        '<div class="text-center text-gray-400 py-12"><i class="fas fa-inbox text-4xl mb-2"></i><p>Няма активни сметки</p><button onclick="openCreateSessionModal()" class="mt-3 text-green-600 hover:underline">Създайте първата сметка</button></div>';
+                        '<div class="text-center text-gray-400 py-12"><i class="fas fa-inbox text-4xl mb-2"></i><p>Няма активни сметки</p><button onclick="openCreateSessionModal()" class="mt-3 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold"><i class="fas fa-plus mr-1"></i> Създайте сметка</button></div>';
                     $('#sessionsCount').text('0 отворени');
                 } else {
                     sessions.forEach(session => {
@@ -415,7 +397,6 @@
             });
         }
 
-        // ========== ФУНКЦИИ ЗА ПРОДУКТИ ==========
         function addToCurrentSession(element) {
             if (!currentSessionToken) {
                 alert('Моля, първо изберете сметка!');
@@ -437,29 +418,23 @@
             $('#modalAvailableQty').text(selectedProductData.availableQty);
             $('#modalQuantity').val('1');
             $('#quantityModal').removeClass('hidden');
-
-            // Фокус върху полето за количество след отваряне на модала
             setTimeout(() => {
                 $('#modalQuantity').focus();
                 $('#modalQuantity').select();
             }, 100);
         }
 
-        // ⭐ ДОБАВЕТЕ ТАЗИ ФУНКЦИЯ ⭐
         function confirmAddToSession() {
             let quantity = parseFloat($('#modalQuantity').val().replace(',', '.'));
-
             if (isNaN(quantity) || quantity <= 0) {
                 alert('Моля, въведете валидно количество');
                 return;
             }
-
             if (quantity > selectedProductData.availableQty) {
                 alert(
                     `Няма достатъчна наличност! Максимално: ${selectedProductData.availableQty} ${selectedProductData.unit}`);
                 return;
             }
-
             $.ajax({
                 url: '/shopping-mall/items',
                 method: 'POST',
@@ -483,16 +458,14 @@
             });
         }
 
-        // Enter да потвърждава в модала за количество
-        $(document).off('keypress', '#modalQuantity').on('keypress', '#modalQuantity', function(e) {
+        $(document).on('keypress', '#modalQuantity', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 confirmAddToSession();
             }
         });
 
-        // Автоматично маркиране на текста при фокус
-        $(document).off('focus', '#modalQuantity').on('focus', '#modalQuantity', function() {
+        $(document).on('focus', '#modalQuantity', function() {
             $(this).select();
         });
 
@@ -507,25 +480,13 @@
             selectedProductData = null;
         }
 
-        // ========== ФУНКЦИИ ЗА СЪЗДАВАНЕ НА СМЕТКА ==========
         function openCreateSessionModal() {
             $('#customerName, #customerPhone, #sessionNote').val('');
             $('#createSessionModal').removeClass('hidden');
-
             setTimeout(() => {
                 $('#customerName').focus();
             }, 100);
         }
-
-        // Enter да потвърждава в полетата за нова сметка
-        $(document).off('keypress', '#customerName, #customerPhone, #sessionNote').on('keypress',
-            '#customerName, #customerPhone, #sessionNote',
-            function(e) {
-                if (e.key === 'Enter' && !(e.shiftKey && this.id === 'sessionNote')) {
-                    e.preventDefault();
-                    createSession();
-                }
-            });
 
         function closeCreateSessionModal() {
             $('#createSessionModal').addClass('hidden');
@@ -542,23 +503,13 @@
             });
         }
 
-        // ========== ФУНКЦИИ ЗА БЕЛЕЖКА ==========
         function openNoteModal() {
             $('#noteText').val(currentSessionData?.note || '');
             $('#noteModal').removeClass('hidden');
-
             setTimeout(() => {
                 $('#noteText').focus();
             }, 100);
         }
-
-        // Enter да запазва бележката (Ctrl+Enter или Cmd+Enter за нов ред)
-        $(document).off('keypress', '#noteText').on('keypress', '#noteText', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
-                e.preventDefault();
-                saveNote();
-            }
-        });
 
         function closeNoteModal() {
             $('#noteModal').addClass('hidden');
@@ -591,6 +542,44 @@
                     },
                     success: function(res) {
                         if (res.success) location.reload();
+                    }
+                });
+            }
+        }
+
+        function editItemQuantity(itemId) {
+            let newQty = prompt('Въведете ново количество:');
+            if (newQty && !isNaN(parseFloat(newQty))) {
+                $.ajax({
+                    url: `/shopping-mall/items/${itemId}`,
+                    method: 'PUT',
+                    data: {
+                        quantity: parseFloat(newQty),
+                        _token: $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(res) {
+                        if (res.success) {
+                            loadSessionDetails(currentSessionToken);
+                            refreshSessionsList();
+                        }
+                    }
+                });
+            }
+        }
+
+        function removeItem(itemId) {
+            if (confirm('Сигурни ли сте?')) {
+                $.ajax({
+                    url: `/shopping-mall/items/${itemId}`,
+                    method: 'DELETE',
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(res) {
+                        if (res.success) {
+                            loadSessionDetails(currentSessionToken);
+                            refreshSessionsList();
+                        }
                     }
                 });
             }

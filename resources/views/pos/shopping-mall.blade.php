@@ -125,7 +125,7 @@
                                 onclick="addToCurrentSession(this)">
                                 <div class="text-5xl mb-2">{{ getProductIcon($product->name) }}</div>
                                 <div class="font-semibold text-sm leading-tight">{{ Str::limit($product->name, 30) }}</div>
-                                <div class="text-primary-600 font-bold mt-2">{{ number_format($product->base_price, 2) }} €
+                                <div class="text-primary-600 font-bold mt-2">{{ number_format($product->base_price, 2) }}  <span class="text-black text-xs">€/{{ $product->unit_symbol ?? 'бр.' }}</span>
                                 </div>
                                 @if ($availableQty <= 0)
                                     <div class="text-xs text-red-500 mt-1">✗ Няма наличност</div>
@@ -176,7 +176,8 @@
     <div id="createSessionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
         <div class="bg-white rounded-2xl p-6 w-96">
             <h3 class="text-xl font-bold mb-4">Нова сметка</h3>
-            <input type="text" id="customerName" class="w-full border rounded-xl p-2 mb-3" placeholder="Име на клиент">
+            <input type="text" id="customerName" class="w-full border rounded-xl p-2 mb-3"
+                placeholder="Име на клиент">
             <input type="text" id="customerPhone" class="w-full border rounded-xl p-2 mb-3" placeholder="Телефон">
             <textarea id="sessionNote" class="w-full border rounded-xl p-2 mb-3" rows="2" placeholder="Бележка"></textarea>
             <div class="flex gap-2">

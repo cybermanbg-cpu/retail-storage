@@ -1,30 +1,105 @@
 <?php
 // app/Helpers/helpers.php
 
-// app/Helpers/helpers.php
-
 if (!function_exists('getProductIcon')) {
-    function getProductIcon($name)
+    /**
+     * Връща подходяща емоджи икона за продукт
+     */
+    function getProductIcon(string $name): string
     {
-        $nameLower = strtolower($name);
-        
-        // Прости правила за най-честите продукти
-        if (str_contains($nameLower, 'домат')) return '🍅';
-        if (str_contains($nameLower, 'краставиц')) return '🥒';
-        if (str_contains($nameLower, 'пипер')) return '🫑';
-        if (str_contains($nameLower, 'пилешк')) return '🍗';
-        if (str_contains($nameLower, 'кафе')) return '☕';
-        if (str_contains($nameLower, 'хляб')) return '🍞';
-        if (str_contains($nameLower, 'сирене')) return '🧀';
-        if (str_contains($nameLower, 'месо')) return '🍖';
-        if (str_contains($nameLower, 'риба')) return '🐟';
-        if (str_contains($nameLower, 'салата')) return '🥗';
-        if (str_contains($nameLower, 'супа')) return '🥣';
-        if (str_contains($nameLower, 'десерт')) return '🍰';
-        if (str_contains($nameLower, 'сок')) return '🥤';
-        if (str_contains($nameLower, 'бира')) return '🍺';
-        if (str_contains($nameLower, 'вода')) return '💧';
-        
+        $nameLower = mb_strtolower(trim($name));
+
+        // === Основен mapping (keywords с приоритет) ===
+        $iconMap = [
+            // Зеленчуци
+            'домат' => '🍅',
+            'краставиц' => '🥒',
+            'пипер' => '🫑',
+            'чушк' => '🫑',
+            'картоф' => '🥔',
+            'морков' => '🥕',
+            'зеле' => '🥬',
+            'маруля' => '🥬',
+            'лук' => '🧅',
+            'чесън' => '🧄',
+
+            // Плодове
+            'ябълк' => '🍎',
+            'круша' => '🍐',
+            'банан' => '🍌',
+            'портокал' => '🍊',
+            'мандарин' => '🍊',
+            'грозд' => '🍇',
+            'ягод' => '🍓',
+            'череш' => '🍒',
+            'киви' => '🥝',
+
+            // Месо и риба
+            'пилешк' => '🍗',
+            'пиле' => '🍗',
+            'говежд' => '🥩',
+            'свинск' => '🥩',
+            'агнешк' => '🥩',
+            'месо' => '🍖',
+            'риба' => '🐟',
+            'салам' => '🌭',
+            'колбас' => '🌭',
+
+            // Млечни
+            'сирен' => '🧀',
+            'кашкавал' => '🧀',
+            'мляко' => '🥛',
+            'йогурт' => '🥛',
+            'масло' => '🧈',
+
+            // Хляб и тестени
+            'хляб' => '🍞',
+            'питк' => '🍞',
+            'багет' => '🥖',
+            'паста' => '🍝',
+            'пица' => '🍕',
+            'ориз' => '🍚',
+
+            // Напитки
+            'кафе' => '☕',
+            'чай' => '🍵',
+            'сок' => '🥤',
+            'бира' => '🍺',
+            'вино' => '🍷',
+            'вода' => '💧',
+            'кока' => '🥤',
+            'кола' => '🥤',
+
+            // Десерти
+            'десерт' => '🍰',
+            'торт' => '🍰',
+            'шоколад' => '🍫',
+            'сладолед' => '🍦',
+        ];
+
+        // 1. Точно съвпадение
+        foreach ($iconMap as $keyword => $icon) {
+            if ($nameLower === $keyword || $nameLower === mb_strtolower($keyword)) {
+                return $icon;
+            }
+        }
+
+        // 2. Частично съвпадение (по приоритет)
+        foreach ($iconMap as $keyword => $icon) {
+            if (mb_strpos($nameLower, $keyword) !== false) {
+                return $icon;
+            }
+        }
+
+        // 3. Специфични допълнителни правила
+        if (strpos($nameLower, 'зелен') !== false || strpos($nameLower, 'салат') !== false) {
+            return '🥗';
+        }
+        if (strpos($nameLower, 'супа') !== false) {
+            return '🥣';
+        }
+
+        // Fallback
         return '📦';
     }
 }
