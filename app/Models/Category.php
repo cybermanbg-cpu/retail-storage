@@ -23,7 +23,7 @@ class Category extends Model
     protected $casts = [
         'default_discount' => 'decimal:2',
         'is_active' => 'boolean',
-        'show_in_restaurant_pos' => 'boolean',  // ⭐ ДОБАВЕНО
+        'show_in_restaurant_pos' => 'boolean',
         'sort_order' => 'integer',
     ];
 

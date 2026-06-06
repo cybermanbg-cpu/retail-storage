@@ -77,10 +77,12 @@
             background-color: #ffffff;
             border-color: #e5e7eb;
         }
+
         50% {
             background-color: #dcfce7;
             border-color: #22c55e;
         }
+
         100% {
             background-color: #ffffff;
             border-color: #e5e7eb;
@@ -141,6 +143,7 @@
             opacity: 1;
             transform: translateX(0);
         }
+
         100% {
             opacity: 0;
             transform: translateX(20px);
@@ -173,5 +176,12 @@
     /* ===== Ефект при hover на продукт ===== */
     .product-card:hover {
         transform: translateY(-2px);
+    }
+
+    /* Само най-важните - добавете в края на вашия CSS файл */
+    @media (min-width: 768px) and (max-width: 1024px) {
+        .product-card {
+            padding: 0.75rem !important;
+        }
     }
 }

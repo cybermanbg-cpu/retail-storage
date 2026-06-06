@@ -28,188 +28,212 @@
     <!-- Навигация - скрива се ако $hide_navigation е true -->
     @if (!isset($hide_navigation) && !$__env->yieldContent('hide_navigation'))
         <nav class="bg-white shadow-lg sticky top-0 z-40">
-            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center h-16">
-                    <div class="flex items-center">
-                        <a href="{{ route('home') }}" class="flex items-center space-x-2">
-                            <i class="fas fa-boxes text-2xl text-primary-600"></i>
-                            <span class="font-bold text-xl text-gray-800">Retail<span
-                                    class="text-primary-600">Storage</span></span>
-                        </a>
-                    </div>
-
-                    <div class="hidden md:flex items-center space-x-4">
-                        <a href="{{ route('home') }}"
-                            class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition">
-                            <i class="fas fa-home mr-1"></i> Начало
-                        </a>
-
-                        <!-- POS бутон - ако не е логнат, пренасочва към логин -->
-                        @auth
-                            <a href="{{ route('pos.index') }}"
-                                class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-                                <i class="fas fa-cash-register mr-1"></i> POS
-                            </a>
-                        @else
-                            <a href="{{ route('login') }}"
-                                class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-                                <i class="fas fa-cash-register mr-1"></i> POS
-                            </a>
-                        @endauth
-
-                        <!-- Ресторант POS бутон -->
-                        @auth
-                            <a href="{{ route('restaurant.pos') }}"
-                                class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-                                <i class="fas fa-utensils mr-1"></i> Ресторант POS
-                            </a>
-                        @else
-                            <a href="{{ route('login') }}"
-                                class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-                                <i class="fas fa-utensils mr-1"></i> Ресторант POS
-                            </a>
-                        @endauth
-
-                        <!-- Мол Каса бутон -->
-                        @auth
-                            <a href="{{ route('shopping-mall.pos') }}"
-                                class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-                                <i class="fas fa-cash-register mr-1"></i> Мол (Каса)
-                            </a>
-                        @else
-                            <a href="{{ route('login') }}"
-                                class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-                                <i class="fas fa-cash-register mr-1"></i> Мол (Каса)
-                            </a>
-                        @endauth
-
-                        <!-- Мол Щанд бутон -->
-                        @auth
-                            <a href="{{ route('shopping-mall.kiosk') }}"
-                                class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-                                <i class="fas fa-store mr-1"></i> Мол (Щанд)
-                            </a>
-                        @else
-                            <a href="{{ route('login') }}"
-                                class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-                                <i class="fas fa-store mr-1"></i> Мол (Щанд)
-                            </a>
-                        @endauth
-
-                        <!-- Доклади бутон -->
-                        @auth
-                            <a href="{{ route('reports.index') }}"
-                                class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition">
-                                <i class="fas fa-chart-line mr-1"></i> Доклади
-                            </a>
-                        @else
-                            <a href="{{ route('login') }}"
-                                class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition">
-                                <i class="fas fa-chart-line mr-1"></i> Доклади
-                            </a>
-                        @endauth
-
-                        <!-- Админ бутон -->
-                        @auth
-                            <a href="{{ url('/admin') }}"
-                                class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition">
-                                <i class="fas fa-chalkboard-user mr-1"></i> Админ
-                            </a>
-                        @else
-                            <a href="{{ route('login') }}"
-                                class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition">
-                                <i class="fas fa-chalkboard-user mr-1"></i> Админ
-                            </a>
-                        @endauth
-                    </div>
-
-                    <div class="md:hidden">
-                        <button id="mobile-menu-button" class="text-gray-600 hover:text-gray-900 focus:outline-none">
-                            <i class="fas fa-bars text-xl"></i>
-                        </button>
-                    </div>
-
-                    <!-- Вход / Изход бутон -->
-                    @auth
-                        <a href="{{ route('logout') }}"
-                            class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition"
-                            onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                            <i class="fas fa-sign-out-alt mr-1"></i> Изход
-                        </a>
-                        <form id="logout-form" action="{{ route('logout') }}" method="GET" style="display: none;">
-                            @csrf
-                        </form>
-                    @else
-                        <a href="{{ route('login') }}"
-                            class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-                            <i class="fas fa-sign-in-alt mr-1"></i> Вход
-                        </a>
-                    @endauth
-                </div>
+    <div class="container mx-auto px-3 sm:px-4 lg:px-6">
+        <div class="flex justify-between items-center h-14 md:h-16">
+            <!-- Лого -->
+            <div class="flex items-center">
+                <a href="{{ route('home') }}" class="flex items-center space-x-2">
+                    <i class="fas fa-boxes text-xl md:text-2xl text-primary-600"></i>
+                    <span class="font-bold text-base md:text-xl text-gray-800">Retail<span class="text-primary-600">Storage</span></span>
+                </a>
             </div>
 
-            <!-- Мобилно меню -->
-            <div id="mobile-menu" class="hidden md:hidden bg-white border-t">
-                <div class="px-2 pt-2 pb-3 space-y-1">
-                    <a href="{{ route('home') }}"
-                        class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50">
-                        <i class="fas fa-home mr-2"></i> Начало
+            <!-- Десктоп меню - скрива се на таблет -->
+            <div class="hidden lg:flex items-center space-x-4">
+                <a href="{{ route('home') }}"
+                    class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition">
+                    <i class="fas fa-home mr-1"></i> Начало
+                </a>
+
+                @auth
+                    <a href="{{ route('pos.index') }}"
+                        class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                        <i class="fas fa-cash-register mr-1"></i> POS
                     </a>
-
-                    @auth
-                        <a href="{{ route('pos.index') }}"
-                            class="block px-3 py-2 rounded-md text-base font-medium text-white bg-green-500 hover:bg-green-600">
-                            <i class="fas fa-cash-register mr-2"></i> POS
-                        </a>
-                        <a href="{{ route('restaurant.pos') }}"
-                            class="block px-3 py-2 rounded-md text-base font-medium text-white bg-green-500 hover:bg-green-600">
-                            <i class="fas fa-utensils mr-2"></i> Ресторант POS
-                        </a>
-                        <a href="{{ route('shopping-mall.pos') }}"
-                            class="block px-3 py-2 rounded-md text-base font-medium text-white bg-purple-500 hover:bg-purple-600">
-                            <i class="fas fa-cash-register mr-2"></i> Мол (Каса)
-                        </a>
-                        <a href="{{ route('shopping-mall.kiosk') }}"
-                            class="block px-3 py-2 rounded-md text-base font-medium text-white bg-indigo-500 hover:bg-indigo-600">
-                            <i class="fas fa-store mr-2"></i> Мол (Щанд)
-                        </a>
-                        <a href="{{ route('reports.index') }}"
-                            class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50">
-                            <i class="fas fa-chart-line mr-2"></i> Доклади
-                        </a>
-                        <a href="{{ url('/admin') }}"
-                            class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50">
-                            <i class="fas fa-chalkboard-user mr-2"></i> Админ
-                        </a>
-                    @else
-                        <a href="{{ route('login') }}"
-                            class="block px-3 py-2 rounded-md text-base font-medium text-white bg-green-500 hover:bg-green-600">
-                            <i class="fas fa-cash-register mr-2"></i> POS
-                        </a>
-                        <a href="{{ route('login') }}"
-                            class="block px-3 py-2 rounded-md text-base font-medium text-white bg-green-500 hover:bg-green-600">
-                            <i class="fas fa-utensils mr-2"></i> Ресторант POS
-                        </a>
-                        <a href="{{ route('login') }}"
-                            class="block px-3 py-2 rounded-md text-base font-medium text-white bg-purple-500 hover:bg-purple-600">
-                            <i class="fas fa-cash-register mr-2"></i> Мол (Каса)
-                        </a>
-                        <a href="{{ route('login') }}"
-                            class="block px-3 py-2 rounded-md text-base font-medium text-white bg-indigo-500 hover:bg-indigo-600">
-                            <i class="fas fa-store mr-2"></i> Мол (Щанд)
-                        </a>
-                        <a href="{{ route('login') }}"
-                            class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50">
-                            <i class="fas fa-chart-line mr-2"></i> Доклади
-                        </a>
-                        <a href="{{ route('login') }}"
-                            class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50">
-                            <i class="fas fa-chalkboard-user mr-2"></i> Админ
-                        </a>
-                    @endauth
-                </div>
+                    <a href="{{ route('restaurant.pos') }}"
+                        class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                        <i class="fas fa-utensils mr-1"></i> Ресторант
+                    </a>
+                    <a href="{{ route('shopping-mall.pos') }}"
+                        class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                        <i class="fas fa-cash-register mr-1"></i> Мол (Каса)
+                    </a>
+                    <a href="{{ route('shopping-mall.kiosk') }}"
+                        class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                        <i class="fas fa-store mr-1"></i> Мол (Щанд)
+                    </a>
+                    <a href="{{ route('reports.index') }}"
+                        class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition">
+                        <i class="fas fa-chart-line mr-1"></i> Доклади
+                    </a>
+                    <a href="{{ url('/admin') }}"
+                        class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition">
+                        <i class="fas fa-chalkboard-user mr-1"></i> Админ
+                    </a>
+                @else
+                    <a href="{{ route('login') }}"
+                        class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                        <i class="fas fa-cash-register mr-1"></i> POS
+                    </a>
+                    <a href="{{ route('login') }}"
+                        class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                        <i class="fas fa-utensils mr-1"></i> Ресторант
+                    </a>
+                    <a href="{{ route('login') }}"
+                        class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                        <i class="fas fa-cash-register mr-1"></i> Мол (Каса)
+                    </a>
+                    <a href="{{ route('login') }}"
+                        class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                        <i class="fas fa-store mr-1"></i> Мол (Щанд)
+                    </a>
+                    <a href="{{ route('login') }}"
+                        class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition">
+                        <i class="fas fa-chart-line mr-1"></i> Доклади
+                    </a>
+                    <a href="{{ route('login') }}"
+                        class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition">
+                        <i class="fas fa-chalkboard-user mr-1"></i> Админ
+                    </a>
+                @endauth
             </div>
-        </nav>
+
+            <!-- Таблет меню - вижда се само на таблет -->
+            <div class="hidden md:flex lg:hidden items-center space-x-2">
+                <a href="{{ route('home') }}"
+                    class="text-gray-700 hover:text-primary-600 p-2 rounded-md transition">
+                    <i class="fas fa-home text-lg"></i>
+                </a>
+                @auth
+                    <a href="{{ route('pos.index') }}"
+                        class="bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg transition">
+                        <i class="fas fa-cash-register text-lg"></i>
+                    </a>
+                    <a href="{{ route('restaurant.pos') }}"
+                        class="bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg transition">
+                        <i class="fas fa-utensils text-lg"></i>
+                    </a>
+                    <a href="{{ route('reports.index') }}"
+                        class="text-gray-700 hover:text-primary-600 p-2 rounded-md transition">
+                        <i class="fas fa-chart-line text-lg"></i>
+                    </a>
+                    <a href="{{ url('/admin') }}"
+                        class="text-gray-700 hover:text-primary-600 p-2 rounded-md transition">
+                        <i class="fas fa-chalkboard-user text-lg"></i>
+                    </a>
+                @else
+                    <a href="{{ route('login') }}"
+                        class="bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg transition">
+                        <i class="fas fa-cash-register text-lg"></i>
+                    </a>
+                    <a href="{{ route('login') }}"
+                        class="bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg transition">
+                        <i class="fas fa-utensils text-lg"></i>
+                    </a>
+                    <a href="{{ route('login') }}"
+                        class="text-gray-700 hover:text-primary-600 p-2 rounded-md transition">
+                        <i class="fas fa-chart-line text-lg"></i>
+                    </a>
+                    <a href="{{ route('login') }}"
+                        class="text-gray-700 hover:text-primary-600 p-2 rounded-md transition">
+                        <i class="fas fa-chalkboard-user text-lg"></i>
+                    </a>
+                @endauth
+            </div>
+
+            <!-- Мобилно меню (бургер) -->
+            <div class="flex items-center gap-2">
+                <!-- Вход / Изход бутон (мобилен) -->
+                @auth
+                    <a href="{{ route('logout') }}"
+                        class="md:hidden text-gray-700 hover:text-primary-600 px-2 py-2 rounded-md text-sm font-medium transition"
+                        onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                        <i class="fas fa-sign-out-alt text-lg"></i>
+                    </a>
+                @else
+                    <a href="{{ route('login') }}"
+                        class="md:hidden bg-primary-600 hover:bg-primary-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition">
+                        <i class="fas fa-sign-in-alt mr-1"></i> Вход
+                    </a>
+                @endauth
+                
+                <button id="mobile-menu-button" class="md:hidden text-gray-600 hover:text-gray-900 focus:outline-none p-2">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Мобилно меню - изскачащо -->
+    <div id="mobile-menu" class="hidden md:hidden bg-white border-t shadow-lg">
+        <div class="px-2 pt-2 pb-3 space-y-1">
+            <a href="{{ route('home') }}"
+                class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50">
+                <i class="fas fa-home mr-2"></i> Начало
+            </a>
+
+            @auth
+                <a href="{{ route('pos.index') }}"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-white bg-green-500 hover:bg-green-600">
+                    <i class="fas fa-cash-register mr-2"></i> POS
+                </a>
+                <a href="{{ route('restaurant.pos') }}"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-white bg-green-500 hover:bg-green-600">
+                    <i class="fas fa-utensils mr-2"></i> Ресторант POS
+                </a>
+                <a href="{{ route('shopping-mall.pos') }}"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-white bg-purple-500 hover:bg-purple-600">
+                    <i class="fas fa-cash-register mr-2"></i> Мол (Каса)
+                </a>
+                <a href="{{ route('shopping-mall.kiosk') }}"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-white bg-indigo-500 hover:bg-indigo-600">
+                    <i class="fas fa-store mr-2"></i> Мол (Щанд)
+                </a>
+                <a href="{{ route('reports.index') }}"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50">
+                    <i class="fas fa-chart-line mr-2"></i> Доклади
+                </a>
+                <a href="{{ url('/admin') }}"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50">
+                    <i class="fas fa-chalkboard-user mr-2"></i> Админ
+                </a>
+                <a href="{{ route('logout') }}"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-white bg-red-500 hover:bg-red-600"
+                    onclick="event.preventDefault(); document.getElementById('logout-form-mobile').submit();">
+                    <i class="fas fa-sign-out-alt mr-2"></i> Изход
+                </a>
+                <form id="logout-form-mobile" action="{{ route('logout') }}" method="GET" style="display: none;">
+                    @csrf
+                </form>
+            @else
+                <a href="{{ route('login') }}"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-white bg-green-500 hover:bg-green-600">
+                    <i class="fas fa-cash-register mr-2"></i> POS
+                </a>
+                <a href="{{ route('login') }}"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-white bg-green-500 hover:bg-green-600">
+                    <i class="fas fa-utensils mr-2"></i> Ресторант POS
+                </a>
+                <a href="{{ route('login') }}"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-white bg-purple-500 hover:bg-purple-600">
+                    <i class="fas fa-cash-register mr-2"></i> Мол (Каса)
+                </a>
+                <a href="{{ route('login') }}"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-white bg-indigo-500 hover:bg-indigo-600">
+                    <i class="fas fa-store mr-2"></i> Мол (Щанд)
+                </a>
+                <a href="{{ route('login') }}"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50">
+                    <i class="fas fa-chart-line mr-2"></i> Доклади
+                </a>
+                <a href="{{ route('login') }}"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50">
+                    <i class="fas fa-chalkboard-user mr-2"></i> Админ
+                </a>
+            @endauth
+        </div>
+    </div>
+</nav>
     @endif
 
     <!-- ⭐ ТУК СЕКЦИЯ ЗА ФЛАШ СЪОБЩЕНИЯ ⭐ -->

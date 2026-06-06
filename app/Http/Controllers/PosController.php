@@ -278,6 +278,79 @@ class PosController extends Controller
         return response()->json($products);
     }
 
+    /**
+     * Търсене на продукти за Restaurant POS
+     */
+    public function searchRestaurantProducts(Request $request)
+    {
+        $search = $request->get('search');
+        $categoryId = $request->get('category_id');
+        $user = Auth::user();
+
+        // Вземаме складовия обект на потребителя
+        $storageObject = $this->getCurrentStorageObject();
+
+        if (!$storageObject) {
+            return response()->json([]);
+        }
+
+        $storageObjectId = $storageObject->id;
+        $ownerId = $this->getCurrentOwnerId();
+
+        $query = Product::with(['variants.color', 'variants.size', 'unitOfMeasure'])
+            ->where('type', 'product')
+            ->where('is_active', true)
+            ->where('owner_id', $ownerId);
+
+        // Филтър по категория
+        if ($categoryId) {
+            $query->whereHas('categories', function ($q) use ($categoryId) {
+                $q->where('category_id', $categoryId);
+            });
+        }
+
+        // Търсене по име, SKU или баркод
+        if ($search && strlen($search) >= 2) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('sku', 'like', "%{$search}%")
+                    ->orWhereHas('barcodes', function ($barcodeQuery) use ($search) {
+                        $barcodeQuery->where('barcode', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        $products = $query->limit(50)->get();
+
+        $result = [];
+        foreach ($products as $product) {
+            // Проверка за наличност
+            $variant = $product->variants()->first();
+            if (!$variant)
+                continue;
+
+            $stock = Stock::where('product_variant_id', $variant->id)
+                ->where('storage_object_id', $storageObjectId)
+                ->first();
+
+            $availableQty = $stock ? $stock->available : 0;
+            $maxDiscount = $product->categories->max('default_discount');
+            $discountedPrice = round($product->base_price - ($product->base_price * $maxDiscount / 100), 2);
+
+            $result[] = [
+                'id' => $product->id,
+                'name' => $product->name,
+                'base_price' => $product->base_price,
+                'discounted_price' => $discountedPrice,
+                'discount_percent' => $maxDiscount,
+                'available_quantity' => $availableQty,
+                'unit' => $product->unitOfMeasure?->symbol ?? 'бр.',
+            ];
+        }
+
+        return response()->json($result);
+    }
+
     public function deleteCart($cartId)
     {
         try {

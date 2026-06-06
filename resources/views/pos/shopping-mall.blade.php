@@ -172,7 +172,7 @@
         </div>
     </div>
 
-    <!-- Модали... (остават същите) -->
+    <!-- Модали -->
     <div id="createSessionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
         <div class="bg-white rounded-2xl p-6 w-96">
             <h3 class="text-xl font-bold mb-4">Нова сметка</h3>
@@ -224,25 +224,63 @@
             </div>
         </div>
     </div>
-
+    {{-- модал за плащане --}}
+    {{-- модал за плащане --}}
     <div id="paymentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
         <div class="bg-white rounded-2xl p-6 w-96">
-            <h3 class="text-xl font-bold mb-4">Плащане</h3>
-            <p class="mb-2">Сметка: <strong id="paymentSessionToken"></strong></p>
-            <p class="mb-4 text-2xl font-bold text-primary-600" id="paymentTotal"></p>
-            <input type="text" id="paymentAmount" class="w-full border rounded-xl p-2 mb-3 text-lg"
-                placeholder="Сума за плащане">
-            <select id="paymentMethod" class="w-full border rounded-xl p-2 mb-3">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Плащане</h3>
+                <button onclick="closePaymentModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <p class="mb-1 text-sm text-gray-600">Сметка:</p>
+            <p class="mb-3 font-mono font-bold" id="paymentSessionToken"></p>
+
+            <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+                <p class="text-sm text-gray-600">Обща сума:</p>
+                <p class="text-2xl font-bold text-primary-600" id="paymentTotal">0.00 €</p>
+            </div>
+
+            <label class="block text-sm font-medium mb-1">Въведена сума:</label>
+            <input type="text" id="paymentAmount" class="w-full border rounded-xl p-3 mb-3 text-xl text-center"
+                placeholder="0.00">
+
+            <!-- ⭐ БЪРЗИ СУМИ - 5 колони в ред за тач екран ⭐ -->
+            <div class="grid grid-cols-5 gap-2 mb-3">
+                <button type="button" onclick="setPaymentAmount(5)"
+                    class="bg-gray-100 hover:bg-gray-200 active:bg-gray-300 py-3 rounded-xl text-base font-medium transition touch-manipulation">5€</button>
+                <button type="button" onclick="setPaymentAmount(10)"
+                    class="bg-gray-100 hover:bg-gray-200 active:bg-gray-300 py-3 rounded-xl text-base font-medium transition touch-manipulation">10€</button>
+                <button type="button" onclick="setPaymentAmount(20)"
+                    class="bg-gray-100 hover:bg-gray-200 active:bg-gray-300 py-3 rounded-xl text-base font-medium transition touch-manipulation">20€</button>
+                <button type="button" onclick="setPaymentAmount(50)"
+                    class="bg-gray-100 hover:bg-gray-200 active:bg-gray-300 py-3 rounded-xl text-base font-medium transition touch-manipulation">50€</button>
+                <button type="button" onclick="setPaymentAmount(100)"
+                    class="bg-gray-100 hover:bg-gray-200 active:bg-gray-300 py-3 rounded-xl text-base font-medium transition touch-manipulation">100€</button>
+            </div>
+
+            <label class="block text-sm font-medium mb-1">Начин на плащане:</label>
+            <select id="paymentMethod" class="w-full border rounded-xl p-3 mb-3 text-base">
                 <option value="cash">💵 В брой</option>
                 <option value="card">💳 Карта</option>
             </select>
-            <div id="changeInfo" class="hidden mb-3 p-2 bg-green-100 rounded">
-                Ресто: <span id="changeAmount" class="font-bold">0.00</span> €
+
+            <div id="changeInfo" class="hidden mb-3 p-3 bg-green-100 rounded-lg">
+                <i class="fas fa-money-bill-wave text-green-600 mr-1"></i>
+                <span>Ресто: </span><span id="changeAmount" class="font-bold text-green-700">0.00</span> €
             </div>
+
             <div class="flex gap-2">
-                <button onclick="confirmPayment()"
-                    class="flex-1 bg-green-600 text-white py-2 rounded-xl">Потвърди</button>
-                <button onclick="closePaymentModal()" class="flex-1 bg-gray-300 py-2 rounded-xl">Отказ</button>
+                <button id="confirmPaymentBtn" onclick="confirmPayment()"
+                    class="flex-1 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white py-3 rounded-xl font-semibold transition touch-manipulation">
+                    <i class="fas fa-check-circle mr-2"></i> Потвърди
+                </button>
+                <button onclick="closePaymentModal()"
+                    class="flex-1 bg-gray-300 hover:bg-gray-400 active:bg-gray-500 text-gray-800 py-3 rounded-xl font-semibold transition touch-manipulation">
+                    <i class="fas fa-times mr-2"></i> Отказ
+                </button>
             </div>
         </div>
     </div>
@@ -482,6 +520,26 @@
             $('#quantityModal').addClass('hidden');
         }
 
+        // ========== ФУНКЦИИ ЗА БЪРЗИ СУМИ ==========
+        function setPaymentAmount(amount) {
+            // Гарантираме, че amount е число
+            let numericAmount = parseFloat(amount);
+            if (isNaN(numericAmount)) {
+                numericAmount = 0;
+            }
+
+            let total = parseFloat(currentSessionData.total_amount);
+            if (isNaN(total)) {
+                total = 0;
+            }
+
+            let finalAmount = numericAmount >= total ? numericAmount : total;
+            $('#paymentAmount').val(finalAmount.toFixed(2));
+            $('#paymentAmount').trigger('input'); // Тригва изчисляването на рестото
+            $('#paymentAmount').focus();
+            $('#paymentAmount').select();
+        }
+
         function confirmAddToSession() {
             let quantity = parseFloat($('#modalQuantity').val().replace(',', '.'));
 
@@ -594,6 +652,13 @@
             $('#paymentAmount').val(parseFloat(currentSessionData.total_amount).toFixed(2));
             $('#paymentModal').removeClass('hidden');
 
+            // Фокус върху полето за сума
+            setTimeout(() => {
+                $('#paymentAmount').focus();
+                $('#paymentAmount').select();
+            }, 100);
+
+            // Автоматично преизчисляване на рестото
             $('#paymentAmount').off('input').on('input', function() {
                 let paid = parseFloat($(this).val().replace(',', '.')) || 0;
                 let change = paid - currentSessionData.total_amount;
@@ -606,6 +671,19 @@
             });
         }
 
+        // Enter да потвърждава плащането
+        $(document).off('keypress', '#paymentAmount').on('keypress', '#paymentAmount', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                confirmPayment();
+            }
+        });
+
+        // Автоматично маркиране на текста при фокус
+        $(document).off('focus', '#paymentAmount').on('focus', '#paymentAmount', function() {
+            $(this).select();
+        });
+
         function closePaymentModal() {
             $('#paymentModal').addClass('hidden');
             $('#changeInfo').addClass('hidden');
@@ -617,6 +695,8 @@
 
             if (paid < currentSessionData.total_amount) {
                 alert('Въведената сума е по-малка от дължимата!');
+                $('#paymentAmount').focus();
+                $('#paymentAmount').select();
                 return;
             }
 
@@ -629,6 +709,12 @@
                     amount_paid: paid,
                     _token: $('meta[name="csrf-token"]').attr('content')
                 },
+                beforeSend: function() {
+                    // Деактивиране на бутона за потвърждение
+                    const confirmBtn = $('#paymentModal button:contains("Потвърди")');
+                    confirmBtn.prop('disabled', true).html(
+                        '<i class="fas fa-spinner fa-spin mr-2"></i>Обработване...');
+                },
                 success: function(res) {
                     if (res.success) {
                         alert(
@@ -637,10 +723,15 @@
                         location.reload();
                     } else {
                         alert('❌ Грешка: ' + res.message);
+                        // Възстановяване на бутона
+                        $('#paymentModal button:contains("Потвърди")').prop('disabled', false).html(
+                            '<i class="fas fa-check-circle mr-2"></i> Потвърди');
                     }
                 },
                 error: function(xhr) {
                     alert('❌ Грешка при плащане!');
+                    $('#paymentModal button:contains("Потвърди")').prop('disabled', false).html(
+                        '<i class="fas fa-check-circle mr-2"></i> Потвърди');
                 }
             });
         }

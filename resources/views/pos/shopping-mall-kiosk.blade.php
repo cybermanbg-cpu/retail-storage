@@ -139,7 +139,7 @@
         </div>
     </div>
 
-    <!-- Модали (същите като в касата) -->
+    <!-- Модал за създаване на сметка -->
     <div id="createSessionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
         <div class="bg-white rounded-2xl p-6 w-96">
             <h3 class="text-xl font-bold mb-4">Нова сметка</h3>
@@ -268,7 +268,7 @@
 
                 $('#productsGrid').html(
                     '<div class="col-span-full text-center py-12"><i class="fas fa-spinner fa-spin text-3xl text-green-600"></i><p class="mt-2 text-gray-500">Търсене...</p></div>'
-                    );
+                );
 
                 searchTimeout = setTimeout(() => {
                     $.get(`/shopping-mall/search-products?search=${encodeURIComponent(search)}`,
@@ -276,7 +276,7 @@
                             if (products.length === 0) {
                                 $('#productsGrid').html(
                                     '<div class="col-span-full text-center py-12"><i class="fas fa-search text-4xl text-gray-400 mb-2"></i><p class="text-gray-500">Няма намерени продукти</p></div>'
-                                    );
+                                );
                                 return;
                             }
 
@@ -288,7 +288,7 @@
                                     (availableQty < 5 ?
                                         `<div class="text-xs text-orange-500 mt-1">⚠️ Остава: ${availableQty}</div>` :
                                         `<div class="text-xs text-green-500 mt-1">✓ Налично: ${availableQty}</div>`
-                                        );
+                                    );
 
                                 html += `
                                 <div class="product-card bg-white border-2 border-gray-100 hover:border-green-500 rounded-2xl p-3 cursor-pointer transition-all hover:shadow-lg text-center"
@@ -370,11 +370,11 @@
                                     <div class="text-right">
                                         <div class="font-semibold">${parseFloat(item.total_price).toFixed(2)} €</div>
                                         ${item.kiosk_id == currentKioskId ? `
-                                            <div class="flex gap-1 mt-2">
-                                                <button onclick="editItemQuantity(${item.id})" class="text-blue-500 text-sm">✏️</button>
-                                                <button onclick="removeItem(${item.id})" class="text-red-500 text-sm">🗑️</button>
-                                            </div>
-                                            ` : ''}
+                                                            <div class="flex gap-1 mt-2">
+                                                                <button onclick="editItemQuantity(${item.id})" class="text-blue-500 text-sm">✏️</button>
+                                                                <button onclick="removeItem(${item.id})" class="text-red-500 text-sm">🗑️</button>
+                                                            </div>
+                                                            ` : ''}
                                     </div>
                                 </div>
                             </div>
@@ -437,28 +437,29 @@
             $('#modalAvailableQty').text(selectedProductData.availableQty);
             $('#modalQuantity').val('1');
             $('#quantityModal').removeClass('hidden');
+
+            // Фокус върху полето за количество след отваряне на модала
+            setTimeout(() => {
+                $('#modalQuantity').focus();
+                $('#modalQuantity').select();
+            }, 100);
         }
 
-        function setQuantity(qty) {
-            $('#modalQuantity').val(qty);
-        }
-
-        function closeQuantityModal() {
-            $('#quantityModal').addClass('hidden');
-            selectedProductData = null;
-        }
-
+        // ⭐ ДОБАВЕТЕ ТАЗИ ФУНКЦИЯ ⭐
         function confirmAddToSession() {
             let quantity = parseFloat($('#modalQuantity').val().replace(',', '.'));
+
             if (isNaN(quantity) || quantity <= 0) {
                 alert('Моля, въведете валидно количество');
                 return;
             }
+
             if (quantity > selectedProductData.availableQty) {
                 alert(
                     `Няма достатъчна наличност! Максимално: ${selectedProductData.availableQty} ${selectedProductData.unit}`);
                 return;
             }
+
             $.ajax({
                 url: '/shopping-mall/items',
                 method: 'POST',
@@ -482,48 +483,49 @@
             });
         }
 
-        function editItemQuantity(itemId) {
-            let newQty = prompt('Въведете ново количество:');
-            if (newQty && !isNaN(parseFloat(newQty))) {
-                $.ajax({
-                    url: `/shopping-mall/items/${itemId}`,
-                    method: 'PUT',
-                    data: {
-                        quantity: parseFloat(newQty),
-                        _token: $('meta[name="csrf-token"]').attr('content')
-                    },
-                    success: function(res) {
-                        if (res.success) {
-                            loadSessionDetails(currentSessionToken);
-                            refreshSessionsList();
-                        }
-                    }
-                });
+        // Enter да потвърждава в модала за количество
+        $(document).off('keypress', '#modalQuantity').on('keypress', '#modalQuantity', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                confirmAddToSession();
             }
+        });
+
+        // Автоматично маркиране на текста при фокус
+        $(document).off('focus', '#modalQuantity').on('focus', '#modalQuantity', function() {
+            $(this).select();
+        });
+
+        function setQuantity(qty) {
+            $('#modalQuantity').val(qty);
+            $('#modalQuantity').focus();
+            $('#modalQuantity').select();
         }
 
-        function removeItem(itemId) {
-            if (confirm('Сигурни ли сте?')) {
-                $.ajax({
-                    url: `/shopping-mall/items/${itemId}`,
-                    method: 'DELETE',
-                    data: {
-                        _token: $('meta[name="csrf-token"]').attr('content')
-                    },
-                    success: function(res) {
-                        if (res.success) {
-                            loadSessionDetails(currentSessionToken);
-                            refreshSessionsList();
-                        }
-                    }
-                });
-            }
+        function closeQuantityModal() {
+            $('#quantityModal').addClass('hidden');
+            selectedProductData = null;
         }
 
-        // ========== ФУНКЦИИ ЗА БЕЛЕЖКА ==========
+        // ========== ФУНКЦИИ ЗА СЪЗДАВАНЕ НА СМЕТКА ==========
         function openCreateSessionModal() {
+            $('#customerName, #customerPhone, #sessionNote').val('');
             $('#createSessionModal').removeClass('hidden');
+
+            setTimeout(() => {
+                $('#customerName').focus();
+            }, 100);
         }
+
+        // Enter да потвърждава в полетата за нова сметка
+        $(document).off('keypress', '#customerName, #customerPhone, #sessionNote').on('keypress',
+            '#customerName, #customerPhone, #sessionNote',
+            function(e) {
+                if (e.key === 'Enter' && !(e.shiftKey && this.id === 'sessionNote')) {
+                    e.preventDefault();
+                    createSession();
+                }
+            });
 
         function closeCreateSessionModal() {
             $('#createSessionModal').addClass('hidden');
@@ -540,10 +542,23 @@
             });
         }
 
+        // ========== ФУНКЦИИ ЗА БЕЛЕЖКА ==========
         function openNoteModal() {
             $('#noteText').val(currentSessionData?.note || '');
             $('#noteModal').removeClass('hidden');
+
+            setTimeout(() => {
+                $('#noteText').focus();
+            }, 100);
         }
+
+        // Enter да запазва бележката (Ctrl+Enter или Cmd+Enter за нов ред)
+        $(document).off('keypress', '#noteText').on('keypress', '#noteText', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+                e.preventDefault();
+                saveNote();
+            }
+        });
 
         function closeNoteModal() {
             $('#noteModal').addClass('hidden');

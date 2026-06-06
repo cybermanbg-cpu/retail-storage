@@ -10,7 +10,7 @@ let currentCartId = null;
 function initRestaurantPOS(storageId, cartId, items) {
     storageObjectId = storageId;
     currentCartId = cartId;
-    
+
     // Валидация на critical IDs
     if (!storageObjectId) {
         console.error('storageObjectId is missing!');
@@ -45,7 +45,7 @@ function initRestaurantPOS(storageId, cartId, items) {
 
 function saveCart() {
     if (!currentCartId) return;
-    
+
     // Подготвяме данните за изпращане
     const itemsToSave = currentItems.map(item => ({
         product_id: item.product_id,
@@ -55,15 +55,15 @@ function saveCart() {
         discount: parseFloat(item.discount) || 0,
         product_name: item.product_name
     }));
-    
+
     $.ajax({
         url: `/pos/cart/${currentCartId}`,
         method: 'PUT',
-        data: { 
-            items: itemsToSave, 
-            _token: $('meta[name="csrf-token"]').attr('content') 
+        data: {
+            items: itemsToSave,
+            _token: $('meta[name="csrf-token"]').attr('content')
         },
-        error: function(xhr) {
+        error: function (xhr) {
             console.error('Error saving cart:', xhr);
         }
     });
@@ -94,10 +94,13 @@ function attachGlobalEvents() {
 
     $('#checkoutBtn').off('click').on('click', openPaymentModal);
 
-    $('#clearSearchBtn').off('click').on('click', function () {
+    $('#clearSearchBtn, #clearSearchBtnAlt').off('click').on('click', function () {
         $('#searchInput').val('');
-        if (currentCategoryId) loadProducts(currentCategoryId);
-        else showAllProducts();
+        if (currentCategoryId) {
+            loadProducts(currentCategoryId);
+        } else {
+            showAllProducts();
+        }
     });
 
     // Събития за модала - без ограничения на клавишите
@@ -162,17 +165,48 @@ function attachGlobalEvents() {
     });
 
     // Търсене
+    // Търсене на продукти за Restaurant POS
     let searchTimeout;
     $('#searchInput').off('input').on('input', function () {
         clearTimeout(searchTimeout);
-        let search = $(this).val();
-        if (search.length < 2) {
-            if (currentCategoryId) loadProducts(currentCategoryId);
+        let search = $(this).val().trim();
+
+        // Ако полето е празно, показваме продуктите от текущата категория
+        if (search.length === 0) {
+            if (currentCategoryId) {
+                loadProducts(currentCategoryId);
+            } else {
+                showAllProducts();
+            }
             return;
         }
+
+        // Ако има по-малко от 2 символа, не търсим
+        if (search.length < 2) {
+            return;
+        }
+
+        // Показваме индикатор за зареждане
+        $('#productsGrid').html('<div class="col-span-full text-center py-12"><i class="fas fa-spinner fa-spin text-3xl text-primary-600"></i><p class="mt-2 text-gray-500">Търсене...</p></div>');
+
         searchTimeout = setTimeout(() => {
-            $.get(`/pos/search-products?search=${encodeURIComponent(search)}&category_id=${currentCategoryId || ''}`)
-                .done(products => displayProducts(products));
+            let url = `/pos/search-restaurant-products?search=${encodeURIComponent(search)}`;
+            if (currentCategoryId) {
+                url += `&category_id=${currentCategoryId}`;
+            }
+
+            $.get(url)
+                .done(function (products) {
+                    if (!products || products.length === 0) {
+                        $('#productsGrid').html('<div class="col-span-full text-center text-gray-400 py-12">Няма намерени продукти</div>');
+                        return;
+                    }
+                    displayProducts(products);
+                })
+                .fail(function (error) {
+                    console.error('Search error:', error);
+                    $('#productsGrid').html('<div class="col-span-full text-center text-red-500 py-12">Грешка при търсене</div>');
+                });
         }, 300);
     });
 }
@@ -226,22 +260,35 @@ function displayProducts(products) {
             }
 
             html += `
-                <div class="product-card bg-white border-2 border-gray-100 hover:border-primary-500 rounded-3xl p-4 cursor-pointer transition-all active:scale-95 text-center ${stockClass}"
-                     data-product-id="${p.id}"
-                     data-product-name="${p.name.replace(/'/g, "\\'")}"
-                     data-price="${p.discounted_price}"
-                     data-original-price="${p.base_price}"
-                     data-discount="${p.discount_percent}"
-                     data-available="${availableQty}"
-                     data-unit="${p.unit || 'бр.'}"
-                     data-is-fractional="${isFractional}">
-                    <div class="text-5xl mb-3">${getProductIcon(p.name)}</div>
-                    <div class="font-semibold text-lg leading-tight mb-1">${p.name}</div>
-                    <div class="text-2xl font-bold text-primary-600">${parseFloat(p.discounted_price).toFixed(2)} €</div>
-                    ${p.discount_percent > 0 ? `<div class="text-sm text-red-500 line-through">${parseFloat(p.base_price).toFixed(2)} €</div>` : ''}
-                    ${stockBadge}
-                </div>
-            `;
+    <div class="product-card bg-white border-2 border-gray-100 hover:border-primary-500 rounded-xl md:rounded-2xl lg:rounded-3xl p-2 md:p-3 lg:p-4 cursor-pointer transition-all active:scale-95 text-center ${stockClass}"
+         data-product-id="${p.id}"
+         data-product-name="${p.name.replace(/'/g, "\\'")}"
+         data-price="${p.discounted_price}"
+         data-original-price="${p.base_price}"
+         data-discount="${p.discount_percent}"
+         data-available="${availableQty}"
+         data-unit="${p.unit || 'бр.'}"
+         data-is-fractional="${isFractional}">
+        
+        <!-- Икона - responsive размер -->
+        <div class="text-3xl md:text-4xl lg:text-5xl mb-2 md:mb-3">${getProductIcon(p.name)}</div>
+        
+        <!-- Име на продукта - съкратено на таблет -->
+        <div class="font-semibold text-sm md:text-base lg:text-lg leading-tight mb-1 line-clamp-2">${p.name}</div>
+        
+        <!-- Цена -->
+        <div class="text-lg md:text-xl lg:text-2xl font-bold text-primary-600">${parseFloat(p.discounted_price).toFixed(2)} €</div>
+        
+        <!-- Стара цена при отстъпка -->
+        ${p.discount_percent > 0 ? `<div class="text-xs md:text-sm text-red-500 line-through">${parseFloat(p.base_price).toFixed(2)} €</div>` : ''}
+        
+        <!-- Бейдж за наличност -->
+        ${stockBadge}
+        
+        <!-- Индикатор за мерна единица (само на по-големи екрани) -->
+        <div class="hidden sm:block text-xs text-gray-400 mt-1">${p.unit || 'бр.'}</div>
+    </div>
+`;
         });
     }
     $('#productsGrid').html(html);
@@ -376,7 +423,7 @@ function addToCart(product) {
     const price = parseFloat(product.price) || 0;
     const original_price = parseFloat(product.original_price) || price;
     const discount = parseFloat(product.discount) || 0;
-    
+
     let existing = currentItems.find(item => item.product_id === product.id);
     if (existing) {
         existing.quantity = (parseFloat(existing.quantity) || 0) + quantity;
@@ -400,22 +447,22 @@ function updateCart() {
     let subtotal = 0;
     let totalDiscount = 0;
     let itemsCount = 0;
-    
+
     currentItems.forEach((item, i) => {
         // Превръщаме всички числови стойности в числа
         const quantity = parseFloat(item.quantity) || 0;
         const price = parseFloat(item.price) || 0;
         const original_price = parseFloat(item.original_price) || 0;
         const discount = parseFloat(item.discount) || 0;
-        
+
         const itemTotal = quantity * price;
         const originalTotal = quantity * original_price;
         const discountAmount = originalTotal - itemTotal;
-        
+
         subtotal += originalTotal;
         totalDiscount += discountAmount;
         itemsCount += quantity;
-        
+
         html += `
             <div class="bg-gray-50 rounded-2xl p-4 hover:shadow transition">
                 <div class="flex justify-between items-start">
@@ -436,7 +483,7 @@ function updateCart() {
             </div>
         `;
     });
-    
+
     $('#cartItems').html(html || '<div class="text-center text-gray-400 py-12">Няма добавени продукти</div>');
     $('#subtotalAmount').text(subtotal.toFixed(2) + ' €');
     $('#discountAmount').text(totalDiscount.toFixed(2) + ' €');
@@ -454,10 +501,10 @@ function escapeHtml(text) {
 
 window.changeQuantity = (index, change) => {
     if (!currentItems[index]) return;
-    
+
     let currentQty = parseFloat(currentItems[index].quantity) || 0;
     let newQty = currentQty + change;
-    
+
     if (newQty < 0.001) { // Позволяваме много малки количества за дробни единици
         currentItems.splice(index, 1);
     } else {
@@ -544,14 +591,14 @@ window.processPayment = function (method, amountPaid = null, changeAmount = null
     let clientId = $('#clientSelect').val();
     let paymentAmount = amountPaid !== null ? amountPaid : currentTotal;
     let change = changeAmount !== null ? changeAmount : 0;
-    
+
     // Проверка дали имаме валиден cart_id
     if (!currentCartId) {
         alert('Грешка: Липсва ID на текущата поръчка!');
         console.error('currentCartId is missing:', currentCartId);
         return;
     }
-    
+
     console.log('Sending payment request with:', {
         cart_id: currentCartId,
         storage_object_id: storageObjectId,
@@ -559,7 +606,7 @@ window.processPayment = function (method, amountPaid = null, changeAmount = null
         items_count: currentItems.length,
         payment_method: method
     });
-    
+
     $.ajax({
         url: '/pos/restaurant-receipt',
         method: 'POST',
@@ -586,16 +633,16 @@ window.processPayment = function (method, amountPaid = null, changeAmount = null
                     message += `\nРесто: ${change.toFixed(2)} €`;
                 }
                 alert(message);
-                
+
                 // Актуализираме currentCartId с новия ID от отговора
                 if (res.new_cart_id) {
                     currentCartId = res.new_cart_id;
                 }
-                
+
                 currentItems = [];
                 updateCart();
                 closePaymentModal();
-                
+
                 // Опционално: презареждане на страницата след успешно плащане
                 // location.reload();
             } else {
@@ -644,13 +691,13 @@ window.processPayment = function (method, amountPaid = null, changeAmount = null
     let clientId = $('#clientSelect').val();
     let paymentAmount = amountPaid !== null ? amountPaid : currentTotal;
     let change = changeAmount !== null ? changeAmount : 0;
-    
+
     if (!currentCartId) {
         alert('Грешка: Липсва ID на текущата поръчка!');
         console.error('currentCartId is missing:', currentCartId);
         return;
     }
-    
+
     console.log('Sending payment request with:', {
         cart_id: currentCartId,
         storage_object_id: storageObjectId,
@@ -658,7 +705,7 @@ window.processPayment = function (method, amountPaid = null, changeAmount = null
         items_count: currentItems.length,
         payment_method: method
     });
-    
+
     $.ajax({
         url: '/pos/restaurant-receipt',
         method: 'POST',
@@ -685,15 +732,15 @@ window.processPayment = function (method, amountPaid = null, changeAmount = null
                     message += `\nРесто: ${change.toFixed(2)} €`;
                 }
                 alert(message);
-                
+
                 if (res.new_cart_id) {
                     currentCartId = res.new_cart_id;
                 }
-                
+
                 currentItems = [];
                 updateCart();
                 closePaymentModal();
-                
+
                 // Презареждане след успешно плащане
                 setTimeout(() => location.reload(), 1000);
             } else {
