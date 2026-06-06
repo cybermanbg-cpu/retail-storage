@@ -274,11 +274,55 @@
 @endsection
 
 @push('scripts')
+    <script>
+        // ⭐ ДИРЕКТНА ФУНКЦИЯ ЗА ИКОНИ В JS ⭐
+        window.getProductIcon = function(productName) {
+            const name = productName.toLowerCase();
+            
+            // Зеленчуци
+            if (name.includes('домат')) return '🍅';
+            if (name.includes('краставиц')) return '🥒';
+            if (name.includes('пипер')) return '🫑';
+            if (name.includes('чушк')) return '🫑';
+            
+            // Месо и риба
+            if (name.includes('пилешк')) return '🍗';
+            if (name.includes('месо')) return '🍖';
+            if (name.includes('говежд')) return '🥩';
+            if (name.includes('свинск')) return '🍖';
+            if (name.includes('риба')) return '🐟';
+            
+            // Храна и напитки
+            if (name.includes('кафе')) return '☕';
+            if (name.includes('чай')) return '🍵';
+            if (name.includes('хляб')) return '🍞';
+            if (name.includes('сирен')) return '🧀';
+            if (name.includes('кашкавал')) return '🧀';
+            if (name.includes('салат')) return '🥗';
+            if (name.includes('суп')) return '🥣';
+            if (name.includes('десерт')) return '🍰';
+            if (name.includes('сок')) return '🥤';
+            if (name.includes('бира')) return '🍺';
+            if (name.includes('вино')) return '🍷';
+            if (name.includes('вода')) return '💧';
+            if (name.includes('пица')) return '🍕';
+            if (name.includes('паста')) return '🍝';
+            
+            // Плодове
+            if (name.includes('ябълк')) return '🍎';
+            if (name.includes('банан')) return '🍌';
+            if (name.includes('портокал')) return '🍊';
+            
+            return '🥗';
+        };
+    </script>
+    
     <script src="{{ asset('js/restaurant-pos.js') }}"></script>
+    
     <script>
         $(document).ready(function() {
             var cartItems = @json($currentCart->items ?? []);
-
+            
             initRestaurantPOS(
                 {{ $storageObject->id }},
                 {{ $currentCart->id ?? 'null' }},

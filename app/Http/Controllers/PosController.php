@@ -420,9 +420,6 @@ class PosController extends Controller
     /**
      * Restaurant POS изглед
      */
-    /**
-     * Restaurant POS изглед
-     */
     public function restaurantPos()
     {
         $user = Auth::user();

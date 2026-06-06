@@ -259,53 +259,55 @@ function displayProducts(products) {
                 stockBadge = `<div class="text-xs text-green-500 mt-1">✓ Налично: ${availableQty.toFixed(3)}</div>`;
             }
 
+            // ⭐ ВЗИМАМЕ ИКОНАТА ОТ ГЛОБАЛНАТА ФУНКЦИЯ ⭐
+            const icon = window.getProductIcon(p.name);
+
             html += `
-    <div class="product-card bg-white border-2 border-gray-100 hover:border-primary-500 rounded-xl md:rounded-2xl lg:rounded-3xl p-2 md:p-3 lg:p-4 cursor-pointer transition-all active:scale-95 text-center ${stockClass}"
-         data-product-id="${p.id}"
-         data-product-name="${p.name.replace(/'/g, "\\'")}"
-         data-price="${p.discounted_price}"
-         data-original-price="${p.base_price}"
-         data-discount="${p.discount_percent}"
-         data-available="${availableQty}"
-         data-unit="${p.unit || 'бр.'}"
-         data-is-fractional="${isFractional}">
-        
-        <!-- Икона - responsive размер -->
-        <div class="text-3xl md:text-4xl lg:text-5xl mb-2 md:mb-3">${getProductIcon(p.name)}</div>
-        
-        <!-- Име на продукта - съкратено на таблет -->
-        <div class="font-semibold text-sm md:text-base lg:text-lg leading-tight mb-1 line-clamp-2">${p.name}</div>
-        
-        <!-- Цена -->
-        <div class="text-lg md:text-xl lg:text-2xl font-bold text-primary-600">${parseFloat(p.discounted_price).toFixed(2)} €</div>
-        
-        <!-- Стара цена при отстъпка -->
-        ${p.discount_percent > 0 ? `<div class="text-xs md:text-sm text-red-500 line-through">${parseFloat(p.base_price).toFixed(2)} €</div>` : ''}
-        
-        <!-- Бейдж за наличност -->
-        ${stockBadge}
-        
-        <!-- Индикатор за мерна единица (само на по-големи екрани) -->
-        <div class="hidden sm:block text-xs text-gray-400 mt-1">${p.unit || 'бр.'}</div>
-    </div>
-`;
+                <div class="product-card bg-white border-2 border-gray-100 hover:border-primary-500 rounded-xl md:rounded-2xl lg:rounded-3xl p-2 md:p-3 lg:p-4 cursor-pointer transition-all active:scale-95 text-center ${stockClass}"
+                     data-product-id="${p.id}"
+                     data-product-name="${p.name.replace(/'/g, "\\'")}"
+                     data-price="${p.discounted_price}"
+                     data-original-price="${p.base_price}"
+                     data-discount="${p.discount_percent}"
+                     data-available="${availableQty}"
+                     data-unit="${p.unit || 'бр.'}"
+                     data-is-fractional="${isFractional}">
+                    
+                    <!-- Икона - responsive размер -->
+                    <div class="text-3xl md:text-4xl lg:text-5xl mb-2 md:mb-3">${icon}</div>
+                    
+                    <!-- Име на продукта -->
+                    <div class="font-semibold text-sm md:text-base lg:text-lg leading-tight mb-1 line-clamp-2">${escapeHtml(p.name)}</div>
+                    
+                    <!-- Цена -->
+                    <div class="text-lg md:text-xl lg:text-2xl font-bold text-primary-600">${parseFloat(p.discounted_price).toFixed(2)} €</div>
+                    
+                    <!-- Стара цена при отстъпка -->
+                    ${p.discount_percent > 0 ? `<div class="text-xs md:text-sm text-red-500 line-through">${parseFloat(p.base_price).toFixed(2)} €</div>` : ''}
+                    
+                    <!-- Бейдж за наличност -->
+                    ${stockBadge}
+                    
+                    <div class="hidden sm:block text-xs text-gray-400 mt-1">${p.unit || 'бр.'}</div>
+                </div>
+            `;
         });
     }
     $('#productsGrid').html(html);
     attachProductEvents();
 }
 
-function getProductIcon(name) {
-    const icons = {
-        'пица': '🍕', 'домати': '🍅', 'салата': '🥗', 'супа': '🥣',
-        'месо': '🍖', 'риба': '🐟', 'десерт': '🍰', 'кафе': '☕',
-        'чай': '🍵', 'вода': '💧', 'сок': '🥤', 'бира': '🍺', 'вино': '🍷'
-    };
-    for (let [key, icon] of Object.entries(icons)) {
-        if (name.toLowerCase().includes(key)) return icon;
-    }
-    return '🍽️';
-}
+// function getProductIcon(name) {
+//     const icons = {
+//         'пица': '🍕', 'домати': '🍅', 'салата': '🥗', 'супа': '🥣',
+//         'месо': '🍖', 'риба': '🐟', 'десерт': '🍰', 'кафе': '☕',
+//         'чай': '🍵', 'вода': '💧', 'сок': '🥤', 'бира': '🍺', 'вино': '🍷'
+//     };
+//     for (let [key, icon] of Object.entries(icons)) {
+//         if (name.toLowerCase().includes(key)) return icon;
+//     }
+//     return '🍽️';
+// }
 
 function attachProductEvents() {
     $('.product-card').off('click').on('click', function () {
@@ -658,33 +660,8 @@ window.processPayment = function (method, amountPaid = null, changeAmount = null
             alert(errorMsg);
         }
     });
-};// ПРЕМАХНЕТЕ тази функция (ред 406-430):
-/*
-function processPayment(method, amountPaid, changeAmount) {
-    let clientId = $('#clientSelect').val();
+};
 
-    $.ajax({
-        url: '/pos/restaurant-receipt',
-        method: 'POST',
-        data: {
-            cart_id: currentCartId,
-            client_id: clientId,
-            storage_object_id: storageObjectId,
-            items: currentItems.map(item => ({
-                product_id: item.product_id,
-                quantity: item.quantity,
-                price: item.price
-            })),
-            table_number: tableNumber,
-            payment_method: method,
-            amount_paid: amountPaid,
-            change_amount: changeAmount,
-            _token: $('meta[name="csrf-token"]').attr('content')
-        },
-        ...
-    });
-}
-*/
 
 // ОСТАВЕТЕ само тази функция:
 window.processPayment = function (method, amountPaid = null, changeAmount = null) {
