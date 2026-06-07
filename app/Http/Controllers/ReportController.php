@@ -846,45 +846,42 @@ class ReportController extends Controller
                 : now();
         }
 
-        $sessions = ShoppingSession::whereBetween('created_at', [$startDate, $endDate])
+        // БАЗОВА ЗАЯВКА (без get или paginate)
+        $baseQuery = ShoppingSession::whereBetween('created_at', [$startDate, $endDate])
             ->when($ownerId, function ($query) use ($ownerId) {
                 return $query->where('owner_id', $ownerId);
             })
-            ->with(['items', 'createdBy', 'paidBy'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->with(['items', 'createdBy', 'paidBy']);
 
-        $report = [];
-        $totalRevenue = 0;
-        $totalCompleted = 0;
-        $totalCancelled = 0;
+        // 1. ВСИЧКИ ДАННИ ЗА ОБОБЩЕНИЯТА (клонираме заявката)
+        $allSessions = clone $baseQuery;
+        $allSessions = $allSessions->get();
 
-        foreach ($sessions as $session) {
-            $revenue = $session->total_amount;
-            $totalRevenue += $revenue;
+        $totalRevenue = $allSessions->sum('total_amount');
+        $totalCompleted = $allSessions->where('status', 'completed')->sum('total_amount');
+        $totalCancelled = $allSessions->where('status', 'cancelled')->sum('total_amount');
+        $totalSessions = $allSessions->count();
 
-            if ($session->status === 'completed') {
-                $totalCompleted += $revenue;
-            } elseif ($session->status === 'cancelled') {
-                $totalCancelled += $revenue;
-            }
+        // 2. ПАГИНАЦИЯ (отделна заявка за детайлите)
+        $sessions = $baseQuery->orderBy('created_at', 'desc')
+            ->paginate(20)
+            ->through(function ($session) {
+                return [
+                    'session_token' => $session->session_token,
+                    'customer_name' => $session->customer_name ?? 'Анонимен',
+                    'created_at' => $session->created_at,
+                    'paid_at' => $session->paid_at,
+                    'status' => $session->status,
+                    'total_amount' => $session->total_amount,
+                    'paid_amount' => $session->paid_amount,
+                    'payment_method' => $session->payment_method,
+                    'items_count' => $session->items->count(),
+                    'created_by' => $session->createdBy?->name,
+                    'paid_by' => $session->paidBy?->name,
+                ];
+            });
 
-            $report[] = [
-                'session_token' => $session->session_token,
-                'customer_name' => $session->customer_name ?? 'Анонимен',
-                'created_at' => $session->created_at,
-                'paid_at' => $session->paid_at,
-                'status' => $session->status,
-                'total_amount' => $session->total_amount,
-                'paid_amount' => $session->paid_amount,
-                'payment_method' => $session->payment_method,
-                'items_count' => $session->items->count(),
-                'created_by' => $session->createdBy?->name,
-                'paid_by' => $session->paidBy?->name,
-            ];
-        }
-
-        return view('reports.shopping-mall-sales', compact('report', 'startDate', 'endDate', 'totalRevenue', 'totalCompleted', 'totalCancelled'));
+        return view('reports.shopping-mall-sales', compact('sessions', 'startDate', 'endDate', 'totalRevenue', 'totalCompleted', 'totalCancelled', 'totalSessions'));
     }
 
     /**

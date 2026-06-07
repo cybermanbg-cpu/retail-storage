@@ -51,7 +51,7 @@
             </form>
         </div>
 
-        <!-- Обобщение -->
+        <!-- Обобщение - данни за целия период -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div class="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-4 shadow">
                 <div class="text-sm text-purple-600">Общ оборот</div>
@@ -59,7 +59,7 @@
             </div>
             <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4 shadow">
                 <div class="text-sm text-blue-600">Брой сметки</div>
-                <div class="text-2xl font-bold text-blue-700">{{ number_format(count($report)) }}</div>
+                <div class="text-2xl font-bold text-blue-700">{{ number_format($totalSessions) }}</div>
             </div>
             <div class="bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-4 shadow">
                 <div class="text-sm text-green-600">Завършени</div>
@@ -76,12 +76,14 @@
             <div class="bg-white rounded-lg shadow p-4">
                 <div class="text-sm text-gray-500">Средна стойност на сметка</div>
                 <div class="text-xl font-bold text-gray-800">
-                    {{ count($report) > 0 ? number_format($totalRevenue / count($report), 2) : 0 }} €</div>
+                    {{ $totalSessions > 0 ? number_format($totalRevenue / $totalSessions, 2) : 0 }} €
+                </div>
             </div>
             <div class="bg-white rounded-lg shadow p-4">
                 <div class="text-sm text-gray-500">Процент завършени</div>
                 <div class="text-xl font-bold text-gray-800">
-                    {{ $totalRevenue > 0 ? number_format(($totalCompleted / $totalRevenue) * 100, 1) : 0 }}%</div>
+                    {{ $totalRevenue > 0 ? number_format(($totalCompleted / $totalRevenue) * 100, 1) : 0 }}%
+                </div>
                 <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
                     <div class="bg-green-500 h-2 rounded-full"
                         style="width: {{ $totalRevenue > 0 ? ($totalCompleted / $totalRevenue) * 100 : 0 }}%"></div>
@@ -90,7 +92,8 @@
             <div class="bg-white rounded-lg shadow p-4">
                 <div class="text-sm text-gray-500">Процент анулирани</div>
                 <div class="text-xl font-bold text-gray-800">
-                    {{ $totalRevenue > 0 ? number_format(($totalCancelled / $totalRevenue) * 100, 1) : 0 }}%</div>
+                    {{ $totalRevenue > 0 ? number_format(($totalCancelled / $totalRevenue) * 100, 1) : 0 }}%
+                </div>
                 <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
                     <div class="bg-red-500 h-2 rounded-full"
                         style="width: {{ $totalRevenue > 0 ? ($totalCancelled / $totalRevenue) * 100 : 0 }}%"></div>
@@ -98,12 +101,13 @@
             </div>
         </div>
 
-        <!-- Таблица със сметки -->
+        <!-- Таблица със сметки (с пагинация) -->
         <div class="bg-white rounded-lg shadow overflow-hidden">
             <div class="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
                 <h2 class="text-lg font-semibold">Списък на сметките</h2>
                 <div class="text-sm text-gray-500">
-                    {{ count($report) }} записа
+                    <i class="fas fa-list mr-1"></i> {{ $sessions->total() }} записа 
+                    (страница {{ $sessions->currentPage() }} от {{ $sessions->lastPage() }})
                 </div>
             </div>
             <div class="overflow-x-auto">
@@ -120,26 +124,24 @@
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        @forelse($report as $item)
+                        @forelse($sessions as $item)
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-4 font-mono text-sm font-bold">{{ $item['session_token'] }}</td>
                                 <td class="px-6 py-4">{{ $item['customer_name'] }}</td>
                                 <td class="px-6 py-4">
                                     @if ($item['status'] === 'completed')
-                                        <span
-                                            class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Завършена</span>
+                                        <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Завършена</span>
                                     @elseif($item['status'] === 'cancelled')
-                                        <span
-                                            class="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">Анулирана</span>
+                                        <span class="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">Анулирана</span>
                                     @else
-                                        <span
-                                            class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">Активна</span>
+                                        <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">Активна</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-right font-bold">{{ number_format($item['total_amount'], 2) }} €
                                 </td>
                                 <td class="px-6 py-4 text-sm">
-                                    {{ \Carbon\Carbon::parse($item['created_at'])->format('d.m.Y H:i') }}</td>
+                                    {{ \Carbon\Carbon::parse($item['created_at'])->format('d.m.Y H:i') }}
+                                </td>
                                 <td class="px-6 py-4 text-sm">
                                     {{ $item['paid_at'] ? \Carbon\Carbon::parse($item['paid_at'])->format('d.m.Y H:i') : '-' }}
                                 </td>
@@ -165,16 +167,34 @@
                         @endforelse
                     </tbody>
                     <tfoot class="bg-gray-50">
-                        <tr>
-                            <td colspan="3" class="px-6 py-3 text-right font-bold">Общо:</td>
+                        <tr class="border-t">
+                            <td colspan="3" class="px-6 py-3 text-right font-semibold text-gray-600">
+                                Общо за текущата страница:
+                            </td>
                             <td class="px-6 py-3 text-right font-bold text-purple-600">
-                                {{ number_format(collect($report)->sum('total_amount'), 2) }} €
+                                {{ number_format(collect($sessions->items())->sum('total_amount'), 2) }} €
+                            </td>
+                            <td colspan="3"></td>
+                        </tr>
+                        <tr class="bg-gray-100 font-bold">
+                            <td colspan="3" class="px-6 py-3 text-right text-lg">
+                                ОБЩО ЗА ПЕРИОДА ({{ $startDate->format('d.m.Y') }} - {{ $endDate->format('d.m.Y') }}):
+                            </td>
+                            <td class="px-6 py-3 text-right text-lg text-purple-700">
+                                {{ number_format($totalRevenue, 2) }} €
                             </td>
                             <td colspan="3"></td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
+
+            <!-- Пагинация -->
+            @if ($sessions->hasPages())
+                <div class="px-6 py-4 border-t bg-gray-50">
+                    {{ $sessions->appends(request()->query())->links() }}
+                </div>
+            @endif
         </div>
     </div>
 @endsection
