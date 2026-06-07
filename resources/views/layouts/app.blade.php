@@ -57,11 +57,11 @@
                             </a>
                             <a href="{{ route('shopping-mall.kiosk') }}"
                                 class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-                                <i class="fas fa-store mr-1"></i> Мол (Щанд)
+                                <i class="fas fa-store mr-1"></i> Пазар (Щанд)
                             </a>
                             <a href="{{ route('shopping-mall.pos') }}"
                                 class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-                                <i class="fas fa-cash-register mr-1"></i> Мол (Каса)
+                                <i class="fas fa-cash-register mr-1"></i> Пазар (Каса)
                             </a>
                             <a href="{{ route('reports.index') }}"
                                 class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition">
@@ -82,11 +82,11 @@
                             </a>
                             <a href="{{ route('login') }}"
                                 class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-                                <i class="fas fa-store mr-1"></i> Мол (Щанд)
+                                <i class="fas fa-store mr-1"></i> Пазар (Щанд)
                             </a>
                             <a href="{{ route('login') }}"
                                 class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-                                <i class="fas fa-cash-register mr-1"></i> Мол (Каса)
+                                <i class="fas fa-cash-register mr-1"></i> Пазар (Каса)
                             </a>
                             <a href="{{ route('login') }}"
                                 class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition">
@@ -185,11 +185,11 @@
                         </a>
                         <a href="{{ route('shopping-mall.pos') }}"
                             class="block px-3 py-2 rounded-md text-base font-medium text-white bg-purple-500 hover:bg-purple-600">
-                            <i class="fas fa-cash-register mr-2"></i> Мол (Каса)
+                            <i class="fas fa-cash-register mr-2"></i> Пазар (Каса)
                         </a>
                         <a href="{{ route('shopping-mall.kiosk') }}"
                             class="block px-3 py-2 rounded-md text-base font-medium text-white bg-indigo-500 hover:bg-indigo-600">
-                            <i class="fas fa-store mr-2"></i> Мол (Щанд)
+                            <i class="fas fa-store mr-2"></i> Пазар (Щанд)
                         </a>
                         <a href="{{ route('reports.index') }}"
                             class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50">
@@ -219,7 +219,7 @@
                         </a>
                         <a href="{{ route('login') }}"
                             class="block px-3 py-2 rounded-md text-base font-medium text-white bg-purple-500 hover:bg-purple-600">
-                            <i class="fas fa-cash-register mr-2"></i> Мол (Каса)
+                            <i class="fas fa-cash-register mr-2"></i> Пазар (Каса)
                         </a>
                         <a href="{{ route('login') }}"
                             class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50">
@@ -227,7 +227,7 @@
                         </a>
                         <a href="{{ route('login') }}"
                             class="block px-3 py-2 rounded-md text-base font-medium text-white bg-indigo-500 hover:bg-indigo-600">
-                            <i class="fas fa-store mr-2"></i> Мол (Щанд)
+                            <i class="fas fa-store mr-2"></i> Пазар (Щанд)
                         </a>
                         <a href="{{ route('login') }}"
                             class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50">

@@ -404,7 +404,7 @@ class ShoppingMallPosController extends Controller
                     'price' => $product->base_price,
                     'sku' => $product->sku,
                     'unit' => $product->unit_symbol,
-                    'available_qty' => $availableQty,  // ⭐ ДОБАВЕТЕ ТОВА
+                    'available_qty' => $availableQty,
                 ];
             });
 

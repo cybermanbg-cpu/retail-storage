@@ -121,25 +121,25 @@
 
         <!-- ⭐ НОВИ SHOPPING MALL ДОКЛАДИ ⭐ -->
 
-        <!-- Мол POS - Продажби -->
+        <!-- Пазар POS - Продажби -->
         <a href="{{ route('reports.shopping-mall-sales') }}" class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition border-2 border-purple-200">
             <div class="text-4xl text-purple-500 mb-3">🛍️</div>
-            <h2 class="text-xl font-semibold mb-2">Мол POS - Продажби</h2>
-            <p class="text-gray-600">Обобщени продажби от мола (сметки)</p>
+            <h2 class="text-xl font-semibold mb-2">Пазар POS - Продажби</h2>
+            <p class="text-gray-600">Обобщени продажби от пазара (сметки)</p>
         </a>
 
-        <!-- Мол POS - Продажби по щандове -->
+        <!-- Пазар POS - Продажби по щандове -->
         <a href="{{ route('reports.kiosk-sales') }}" class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition border-2 border-indigo-200">
             <div class="text-4xl text-indigo-500 mb-3">🏪</div>
-            <h2 class="text-xl font-semibold mb-2">Мол POS - Продажби по щандове</h2>
+            <h2 class="text-xl font-semibold mb-2">Пазар POS - Продажби по щандове</h2>
             <p class="text-gray-600">Анализ на продажбите от отделните щандове</p>
         </a>
 
-        <!-- Мол POS - Продажби по продукти -->
+        <!-- Пазар POS - Продажби по продукти -->
         <a href="{{ route('reports.shopping-mall-product-sales') }}" class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition border-2 border-fuchsia-200">
             <div class="text-4xl text-fuchsia-500 mb-3">🍕</div>
-            <h2 class="text-xl font-semibold mb-2">Мол POS - Продукти</h2>
-            <p class="text-gray-600">Най-продаваните продукти в мола</p>
+            <h2 class="text-xl font-semibold mb-2">Пазар POS - Продукти</h2>
+            <p class="text-gray-600">Най-продаваните продукти в пазара</p>
         </a>
     </div>
 </div>

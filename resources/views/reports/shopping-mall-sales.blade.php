@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Мол POS - Продажби')
+@section('title', 'Пазар POS - Продажби')
 
 @section('content')
     <div class="container mx-auto px-4 py-8">
         <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold text-gray-800">🛍️ Продажби от Мол POS</h1>
+            <h1 class="text-2xl font-bold text-gray-800">🛍️ Продажби от Пазар POS</h1>
             <a href="{{ route('reports.index') }}" class="text-primary-600 hover:text-primary-800">← Назад към докладите</a>
         </div>
 
