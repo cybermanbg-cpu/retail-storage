@@ -49,6 +49,23 @@
             </div>
         </div>
 
+        <!-- Индикатор за избрана сметка (под header-а) -->
+        <div id="selectedSessionIndicator" class="mb-4 hidden">
+            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-3 rounded-lg shadow-sm">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <i class="fas fa-check-circle mr-2"></i>
+                        <strong>Избрана сметка:</strong>
+                        <span id="selectedSessionToken" class="font-mono font-bold"></span>
+                        <span id="selectedSessionCustomer" class="text-sm ml-2"></span>
+                    </div>
+                    <button onclick="deselectSession()" class="text-red-500 hover:text-red-700 text-sm">
+                        <i class="fas fa-times"></i> Премахни избора
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <div class="flex-1 grid grid-cols-12 gap-4 min-h-0">
 
             <!-- Ляв панел - Активни сметки -->
@@ -104,7 +121,6 @@
                                 <div class="text-blue-600 font-bold mt-2">{{ number_format($product['base_price'], 2) }}
                                     <span class="text-black text-xs">€/{{ $product['unit_symbol'] }}</span>
                                 </div>
-                                {{-- <div class="text-xs text-gray-400 mt-1">{{ $product['unit_symbol'] }}</div> --}}
                                 {!! $stockBadge !!}
                             </div>
                         @endforeach
@@ -189,6 +205,36 @@
         </div>
     </div>
 @endsection
+
+@push('styles')
+    <style>
+        /* Стилове за селектирана сметка */
+        .session-card {
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+        
+        .session-card.selected {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-color: #22c55e;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .session-card.selected .session-token {
+            color: #16a34a;
+        }
+        
+        .session-card.selected .session-amount {
+            color: #16a34a;
+            font-size: 1.1rem;
+        }
+        
+        .session-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+@endpush
 
 @push('scripts')
     <script>
@@ -301,11 +347,56 @@
             });
         });
 
-        function selectSession(token) {
+        function selectSession(token, customerName = null) {
             currentSessionToken = token;
             loadSessionDetails(token);
-            $('.session-card').removeClass('border-green-500 bg-green-50');
-            $(`.session-card[data-session-token="${token}"]`).addClass('border-green-500 bg-green-50');
+            
+            // Премахваме клас 'selected' от всички сметки
+            $('.session-card').removeClass('selected');
+            
+            // Добавяме клас 'selected' на избраната сметка
+            $(`.session-card[data-session-token="${token}"]`).addClass('selected');
+            
+            // Показваме индикатора за избрана сметка
+            $('#selectedSessionIndicator').removeClass('hidden');
+            $('#selectedSessionToken').text(token);
+            
+            if (customerName) {
+                $('#selectedSessionCustomer').text(`(${escapeHtml(customerName)})`);
+            } else {
+                // Опитваме се да вземем името от елемента
+                const customerNameElement = $(`.session-card[data-session-token="${token}"] .customer-name`);
+                if (customerNameElement.length) {
+                    $('#selectedSessionCustomer').text(`(${customerNameElement.text()})`);
+                } else {
+                    $('#selectedSessionCustomer').text('');
+                }
+            }
+            
+            // Скролваме до избраната сметка
+            const selectedElement = $(`.session-card[data-session-token="${token}"]`);
+            if (selectedElement.length) {
+                selectedElement[0].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+        
+        function deselectSession() {
+            if (confirm('Сигурни ли сте, че искате да премахнете избора на сметка?')) {
+                currentSessionToken = null;
+                currentSessionData = null;
+                $('.session-card').removeClass('selected');
+                $('#selectedSessionIndicator').addClass('hidden');
+                
+                // Показваме празно състояние в десния панел
+                $('#sessionInfo').html(`
+                    <div class="text-center text-gray-400 py-8">
+                        <i class="fas fa-folder-open text-5xl mb-3"></i>
+                        <p>Изберете сметка</p>
+                    </div>
+                `);
+                $('#sessionItems').empty();
+                $('#sessionActions').addClass('hidden');
+            }
         }
 
         function loadSessionDetails(token) {
@@ -381,14 +472,27 @@
                     $('#sessionsCount').text('0 отворени');
                 } else {
                     sessions.forEach(session => {
+                        const isSelected = currentSessionToken === session.session_token;
+                        const selectedClass = isSelected ? 'selected' : '';
+                        
                         html += `
-                            <div class="session-card bg-gray-50 rounded-xl p-3 cursor-pointer hover:shadow-lg" data-session-token="${session.session_token}" onclick="selectSession('${session.session_token}')">
-                                <div class="flex justify-between">
-                                    <span class="font-mono font-bold">${session.session_token}</span>
-                                    <span class="font-bold text-green-600">${parseFloat(session.total_amount).toFixed(2)} €</span>
+                            <div class="session-card bg-gray-50 rounded-xl p-3 cursor-pointer hover:shadow-lg transition-all ${selectedClass}" 
+                                 data-session-token="${session.session_token}" 
+                                 onclick="selectSession('${session.session_token}', '${escapeHtml(session.customer_name || '')}')">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2">
+                                            <span class="session-token font-mono font-bold text-sm ${isSelected ? 'text-green-600' : ''}">${session.session_token}</span>
+                                            ${session.status === 'completed' ? '<span class="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">завършена</span>' : ''}
+                                        </div>
+                                        ${session.customer_name ? `<div class="customer-name text-sm text-gray-600 mt-1"><i class="fas fa-user"></i> ${escapeHtml(session.customer_name)}</div>` : ''}
+                                        <div class="text-xs text-gray-400 mt-1">${session.created_at}</div>
+                                    </div>
+                                    <div class="session-amount text-right ${isSelected ? 'text-green-600 font-bold' : 'font-bold text-green-600'}">
+                                        ${parseFloat(session.total_amount).toFixed(2)} €
+                                    </div>
                                 </div>
-                                ${session.customer_name ? `<div class="text-sm text-gray-600"><i class="fas fa-user"></i> ${escapeHtml(session.customer_name)}</div>` : ''}
-                                <div class="text-xs text-gray-400">${session.created_at}</div>
+                                ${isSelected ? '<div class="mt-2 text-xs text-green-600"><i class="fas fa-check-circle"></i> Активна сметка</div>' : ''}
                             </div>
                         `;
                     });
@@ -508,18 +612,12 @@
                 if (res.success) {
                     closeCreateSessionModal();
 
-                    // Ако контролерът връща session_token
                     if (res.session && res.session.session_token) {
                         const newToken = res.session.session_token;
                         currentSessionToken = newToken;
-
-                        // Автоматично избираме новата сметка
-                        selectSession(newToken);
-
-                        // Опресняваме списъка
+                        selectSession(newToken, customerName);
                         refreshSessionsList();
                     } else {
-                        // Ако не връща token - презареждаме
                         location.reload();
                     }
                 } else {
@@ -530,24 +628,18 @@
             });
         }
 
-        // Enter поддръжка в модала за нова сметка
         function attachCreateSessionEnterKey() {
             $('#createSessionModal input, #createSessionModal textarea').off('keypress').on('keypress', function(e) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
-
-                    // Ако сме във textarea (бележка), позволяваме нов ред с Shift+Enter
                     if ($(this).is('textarea') && e.shiftKey) {
-                        return; // нормално нов ред
+                        return;
                     }
-
-                    // Във всички останали случаи — създаваме сметката
                     createSession();
                 }
             });
         }
 
-        // При отваряне на модала закачаме събитието
         $(document).on('click', 'button[onclick*="openCreateSessionModal"]', function() {
             setTimeout(() => {
                 attachCreateSessionEnterKey();
@@ -596,7 +688,11 @@
                         _token: $('meta[name="csrf-token"]').attr('content')
                     },
                     success: function(res) {
-                        if (res.success) location.reload();
+                        if (res.success) {
+                            currentSessionToken = null;
+                            currentSessionData = null;
+                            location.reload();
+                        }
                     }
                 });
             }
