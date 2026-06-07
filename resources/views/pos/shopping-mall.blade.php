@@ -125,7 +125,8 @@
                                 onclick="addToCurrentSession(this)">
                                 <div class="text-5xl mb-2">{{ getProductIcon($product->name) }}</div>
                                 <div class="font-semibold text-sm leading-tight">{{ Str::limit($product->name, 30) }}</div>
-                                <div class="text-primary-600 font-bold mt-2">{{ number_format($product->base_price, 2) }}  <span class="text-black text-xs">€/{{ $product->unit_symbol ?? 'бр.' }}</span>
+                                <div class="text-primary-600 font-bold mt-2">{{ number_format($product->base_price, 2) }}
+                                    <span class="text-black text-xs">€/{{ $product->unit_symbol ?? 'бр.' }}</span>
                                 </div>
                                 @if ($availableQty <= 0)
                                     <div class="text-xs text-red-500 mt-1">✗ Няма наличност</div>
@@ -287,6 +288,31 @@
     </div>
 @endsection
 
+@push('styles')
+    <style>
+        /* Стил за избрана сметка */
+        .session-card.selected {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%) !important;
+            border: 2px solid #22c55e !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .session-card.selected .session-token {
+            color: #16a34a;
+            font-weight: bold;
+        }
+
+        .session-card.selected .session-amount {
+            color: #16a34a;
+            font-weight: bold;
+        }
+
+        .session-card.selected .text-primary-600 {
+            color: #16a34a !important;
+        }
+    </style>
+@endpush
+
 @push('scripts')
     <script>
         let currentSessionToken = null;
@@ -342,8 +368,12 @@
         function selectSession(token) {
             currentSessionToken = token;
             loadSessionDetails(token);
-            $('.session-card').removeClass('border-primary-500 bg-primary-50');
-            $(`.session-card[data-session-token="${token}"]`).addClass('border-primary-500 bg-primary-50');
+
+            // Премахваме selected класа от всички
+            $('.session-card').removeClass('selected');
+
+            // Добавяме selected класа на избраната
+            $(`.session-card[data-session-token="${token}"]`).addClass('selected');
         }
 
         function loadSessionDetails(token) {
