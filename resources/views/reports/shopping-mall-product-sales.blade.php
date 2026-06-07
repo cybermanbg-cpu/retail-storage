@@ -51,7 +51,7 @@
             </form>
         </div>
 
-        <!-- Обобщение -->
+        <!-- Обобщение - данни за целия период -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div class="bg-gradient-to-r from-fuchsia-50 to-fuchsia-100 rounded-lg p-4 shadow">
                 <div class="text-sm text-fuchsia-600">Общ оборот</div>
@@ -59,7 +59,7 @@
             </div>
             <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4 shadow">
                 <div class="text-sm text-blue-600">Брой продажби</div>
-                <div class="text-2xl font-bold text-blue-700">{{ number_format($report->count()) }}</div>
+                <div class="text-2xl font-bold text-blue-700">{{ number_format($totalTransactions) }}</div>
             </div>
             <div class="bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-4 shadow">
                 <div class="text-sm text-green-600">Общо количество</div>
@@ -68,11 +68,12 @@
             <div class="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-4 shadow">
                 <div class="text-sm text-purple-600">Средна цена</div>
                 <div class="text-2xl font-bold text-purple-700">
-                    {{ $totalQuantity > 0 ? number_format($totalRevenue / $totalQuantity, 2) : 0 }} €</div>
+                    {{ $totalQuantity > 0 ? number_format($totalRevenue / $totalQuantity, 2) : 0 }} €
+                </div>
             </div>
         </div>
 
-        <!-- Топ продукти -->
+        <!-- Топ продукти (от целия период) -->
         <div class="bg-white rounded-lg shadow overflow-hidden mb-6">
             <div class="px-6 py-4 border-b bg-gray-50">
                 <h2 class="text-lg font-semibold">🏆 Топ 10 продукта</h2>
@@ -89,15 +90,17 @@
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        @foreach ($productSummary->take(10) as $index => $product)
+                        @forelse($productSummary->take(10) as $index => $product)
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-4 text-center font-bold">{{ $index + 1 }}</td>
-                                <td class="px-6 py-4 font-medium">{{ $product['product_name'] }}
+                                <td class="px-6 py-4 font-medium">
+                                    {{ $product['product_name'] }}
                                     <span class="text-xs text-gray-400">({{ $product['unit'] }})</span>
                                 </td>
                                 <td class="px-6 py-4 text-right">{{ number_format($product['quantity'], 2) }}</td>
                                 <td class="px-6 py-4 text-right font-bold text-fuchsia-600">
-                                    {{ number_format($product['total_revenue'], 2) }} €</td>
+                                    {{ number_format($product['total_revenue'], 2) }} €
+                                </td>
                                 <td class="px-6 py-4 text-right">
                                     <div class="flex items-center justify-end gap-2">
                                         <span>{{ $totalRevenue > 0 ? number_format(($product['total_revenue'] / $totalRevenue) * 100, 1) : 0 }}%</span>
@@ -109,18 +112,26 @@
                                     </div>
                                 </td>
                             </tr>
-                        @endforeach
+                        @empty
+                            <tr>
+                                <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                                    <i class="fas fa-chart-line text-4xl mb-2"></i>
+                                    <p>Няма данни за продукти</p>
+                                </td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- Детайлен списък -->
+        <!-- Детайлен списък (с пагинация) -->
         <div class="bg-white rounded-lg shadow overflow-hidden">
             <div class="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
                 <h2 class="text-lg font-semibold">Детайлен списък на продажбите</h2>
                 <div class="text-sm text-gray-500">
-                    {{ $report->count() }} записа
+                    <i class="fas fa-list mr-1"></i> {{ $report->total() }} записа 
+                    (страница {{ $report->currentPage() }} от {{ $report->lastPage() }})
                 </div>
             </div>
             <div class="overflow-x-auto">
@@ -141,14 +152,15 @@
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-4 font-mono text-sm">{{ $item['session_token'] }}</td>
                                 <td class="px-6 py-4 text-sm">
-                                    {{ \Carbon\Carbon::parse($item['date'])->format('d.m.Y H:i') }}</td>
+                                    {{ \Carbon\Carbon::parse($item['date'])->format('d.m.Y H:i') }}
+                                </td>
                                 <td class="px-6 py-4">{{ $item['product_name'] }}</td>
                                 <td class="px-6 py-4 text-sm">{{ $item['kiosk_name'] }}</td>
-                                <td class="px-6 py-4 text-right">{{ number_format($item['quantity'], 3) }}
-                                    {{ $item['unit'] }}</td>
-                                <td class="px-6 py-4 text-right">{{ number_format($item['unit_price'], 2) }} €</td>
-                                <td class="px-6 py-4 text-right font-bold">{{ number_format($item['total_price'], 2) }} €
+                                <td class="px-6 py-4 text-right">
+                                    {{ number_format($item['quantity'], 3) }} {{ $item['unit'] }}
                                 </td>
+                                <td class="px-6 py-4 text-right">{{ number_format($item['unit_price'], 2) }} €</td>
+                                <td class="px-6 py-4 text-right font-bold">{{ number_format($item['total_price'], 2) }} €</td>
                             </tr>
                         @empty
                             <tr>
@@ -160,15 +172,32 @@
                         @endforelse
                     </tbody>
                     <tfoot class="bg-gray-50">
-                        <tr>
-                            <td colspan="6" class="px-6 py-3 text-right font-bold">Общо:</td>
+                        <tr class="border-t">
+                            <td colspan="6" class="px-6 py-3 text-right font-semibold text-gray-600">
+                                Общо за текущата страница:
+                            </td>
                             <td class="px-6 py-3 text-right font-bold text-fuchsia-600">
                                 {{ number_format($report->sum('total_price'), 2) }} €
+                            </td>
+                        </tr>
+                        <tr class="bg-gray-100 font-bold">
+                            <td colspan="6" class="px-6 py-3 text-right text-lg">
+                                ОБЩО ЗА ПЕРИОДА ({{ $startDate->format('d.m.Y') }} - {{ $endDate->format('d.m.Y') }}):
+                            </td>
+                            <td class="px-6 py-3 text-right text-lg text-fuchsia-700">
+                                {{ number_format($totalRevenue, 2) }} €
                             </td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
+
+            <!-- Пагинация -->
+            @if ($report->hasPages())
+                <div class="px-6 py-4 border-t bg-gray-50">
+                    {{ $report->appends(request()->query())->links() }}
+                </div>
+            @endif
         </div>
     </div>
 @endsection

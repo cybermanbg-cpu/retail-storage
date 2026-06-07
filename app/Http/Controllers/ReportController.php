@@ -990,18 +990,26 @@ class ReportController extends Controller
                 : now();
         }
 
-        $items = ShoppingSessionItem::whereHas('shoppingSession', function ($q) use ($startDate, $endDate, $ownerId) {
+        // БАЗОВА ЗАЯВКА (без get или paginate)
+        $baseQuery = ShoppingSessionItem::whereHas('shoppingSession', function ($q) use ($startDate, $endDate, $ownerId) {
             $q->whereBetween('created_at', [$startDate, $endDate])
                 ->where('status', 'completed');
             if ($ownerId) {
                 $q->where('owner_id', $ownerId);
             }
         })
-            ->with(['kiosk', 'product'])
-            ->get();
+            ->with(['kiosk', 'product']);
 
-        // Групиране по продукти
-        $productSummary = $items->groupBy('product_id')->map(function ($productItems, $productId) {
+        // 1. ВСИЧКИ ДАННИ ЗА ОБОБЩЕНИЯТА (клонираме заявката)
+        $allItems = clone $baseQuery;
+        $allItems = $allItems->get();
+
+        $totalRevenue = $allItems->sum('total_price');
+        $totalQuantity = $allItems->sum('quantity');
+        $totalTransactions = $allItems->groupBy('shopping_session_id')->count();
+
+        // 2. ГРУПИРАНЕ ПО ПРОДУКТИ (от всички данни)
+        $productSummary = $allItems->groupBy('product_id')->map(function ($productItems, $productId) {
             $firstItem = $productItems->first();
             return [
                 'product_name' => $firstItem->product_name,
@@ -1011,23 +1019,30 @@ class ReportController extends Controller
             ];
         })->sortByDesc('total_revenue')->values();
 
-        // Детайлен списък
-        $report = $items->map(function ($item) {
-            return [
-                'session_token' => $item->shoppingSession->session_token,
-                'date' => $item->created_at,
-                'product_name' => $item->product_name,
-                'quantity' => $item->quantity,
-                'unit_price' => $item->unit_price,
-                'total_price' => $item->total_price,
-                'unit' => $item->unit,
-                'kiosk_name' => $item->kiosk?->name ?? 'Неизвестен',
-            ];
-        });
+        // 3. ПАГИНАЦИЯ (отделна заявка за детайлите)
+        $report = $baseQuery->orderBy('created_at', 'desc')
+            ->paginate(20)
+            ->through(function ($item) {
+                return [
+                    'session_token' => $item->shoppingSession->session_token,
+                    'date' => $item->created_at,
+                    'product_name' => $item->product_name,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                    'total_price' => $item->total_price,
+                    'unit' => $item->unit,
+                    'kiosk_name' => $item->kiosk?->name ?? 'Неизвестен',
+                ];
+            });
 
-        $totalRevenue = $items->sum('total_price');
-        $totalQuantity = $items->sum('quantity');
-
-        return view('reports.shopping-mall-product-sales', compact('report', 'productSummary', 'startDate', 'endDate', 'totalRevenue', 'totalQuantity'));
+        return view('reports.shopping-mall-product-sales', compact(
+            'report',
+            'productSummary',
+            'startDate',
+            'endDate',
+            'totalRevenue',
+            'totalQuantity',
+            'totalTransactions'
+        ));
     }
 }
