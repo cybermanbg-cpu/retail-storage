@@ -916,19 +916,27 @@ class ReportController extends Controller
                 : now();
         }
 
-        // Вземаме всички артикули от завършени сметки
-        $items = ShoppingSessionItem::whereHas('shoppingSession', function ($q) use ($startDate, $endDate, $ownerId) {
+        // БАЗОВА ЗАЯВКА (без get)
+        $baseQuery = ShoppingSessionItem::whereHas('shoppingSession', function ($q) use ($startDate, $endDate, $ownerId) {
             $q->whereBetween('created_at', [$startDate, $endDate])
                 ->where('status', 'completed');
             if ($ownerId) {
                 $q->where('owner_id', $ownerId);
             }
         })
-            ->with(['kiosk', 'product'])
-            ->get();
+            ->with(['kiosk', 'product']);
 
-        // Групиране по щандове (като масив)
-        $kioskSummary = $items->groupBy('kiosk_id')->map(function ($kioskItems, $kioskId) {
+        // 1. ВСИЧКИ ДАННИ ЗА ОБОБЩЕНИЯТА (клонираме заявката)
+        $allItems = clone $baseQuery;
+        $allItems = $allItems->get();
+
+        // Общи суми за целия период
+        $totalRevenue = $allItems->sum('total_price');
+        $totalQuantity = $allItems->sum('quantity');
+        $totalSales = $allItems->count();
+
+        // Групиране по щандове (от всички данни)
+        $kioskSummary = $allItems->groupBy('kiosk_id')->map(function ($kioskItems, $kioskId) {
             $kiosk = $kioskItems->first()->kiosk;
             return [
                 'kiosk_name' => $kiosk?->name ?? 'Неизвестен щанд',
@@ -938,21 +946,23 @@ class ReportController extends Controller
             ];
         })->sortByDesc('total_revenue')->values();
 
-        // Детайлен списък (като масив)
-        $report = $items->map(function ($item) {
-            return [
-                'session_token' => $item->shoppingSession->session_token,
-                'date' => $item->created_at,
-                'kiosk_name' => $item->kiosk?->name ?? 'Неизвестен',
-                'product_name' => $item->product_name,
-                'quantity' => $item->quantity,
-                'unit_price' => $item->unit_price,
-                'total_price' => $item->total_price,
-                'unit' => $item->unit,
-            ];
-        });
+        // 2. ПАГИНАЦИЯ (отделна заявка за детайлите)
+        $report = $baseQuery->orderBy('created_at', 'desc')
+            ->paginate(20)
+            ->through(function ($item) {
+                return [
+                    'session_token' => $item->shoppingSession->session_token,
+                    'date' => $item->created_at,
+                    'kiosk_name' => $item->kiosk?->name ?? 'Неизвестен',
+                    'product_name' => $item->product_name,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                    'total_price' => $item->total_price,
+                    'unit' => $item->unit,
+                ];
+            });
 
-        return view('reports.kiosk-sales', compact('report', 'kioskSummary', 'startDate', 'endDate'));
+        return view('reports.kiosk-sales', compact('report', 'kioskSummary', 'startDate', 'endDate', 'totalRevenue', 'totalQuantity', 'totalSales'));
     }
 
     /**

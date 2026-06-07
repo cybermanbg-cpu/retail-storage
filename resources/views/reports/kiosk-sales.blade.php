@@ -50,30 +50,29 @@
             </form>
         </div>
 
-        <!-- Обобщение -->
+        <!-- Обобщение - данни за целия период -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div class="bg-gradient-to-r from-indigo-50 to-indigo-100 rounded-lg p-4 shadow">
                 <div class="text-sm text-indigo-600">Общ оборот</div>
-                <div class="text-2xl font-bold text-indigo-700">{{ number_format($kioskSummary->sum('total_revenue'), 2) }}
-                    €</div>
+                <div class="text-2xl font-bold text-indigo-700">{{ number_format($totalRevenue, 2) }} €</div>
             </div>
             <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4 shadow">
                 <div class="text-sm text-blue-600">Брой продажби</div>
-                <div class="text-2xl font-bold text-blue-700">{{ number_format($report->count()) }}</div>
+                <div class="text-2xl font-bold text-blue-700">{{ number_format($totalSales) }}</div>
             </div>
             <div class="bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-4 shadow">
                 <div class="text-sm text-green-600">Общо количество</div>
-                <div class="text-2xl font-bold text-green-700">{{ number_format($report->sum('quantity'), 2) }}</div>
+                <div class="text-2xl font-bold text-green-700">{{ number_format($totalQuantity, 2) }}</div>
             </div>
             <div class="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-4 shadow">
                 <div class="text-sm text-purple-600">Средна стойност</div>
                 <div class="text-2xl font-bold text-purple-700">
-                    {{ $report->count() > 0 ? number_format($report->sum('total_price') / $report->count(), 2) : 0 }} €
+                    {{ $totalSales > 0 ? number_format($totalRevenue / $totalSales, 2) : 0 }} €
                 </div>
             </div>
         </div>
 
-        <!-- Обобщение по щандове -->
+        <!-- Обобщение по щандове (от целия период) -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             @foreach ($kioskSummary as $kiosk)
                 <div class="bg-gradient-to-r from-indigo-50 to-indigo-100 rounded-lg p-4 shadow">
@@ -88,20 +87,20 @@
                             </div>
                         </div>
                         <div class="text-right">
-                            <div class="text-2xl font-bold text-indigo-700">{{ number_format($kiosk['total_revenue'], 2) }}
-                                €</div>
+                            <div class="text-2xl font-bold text-indigo-700">{{ number_format($kiosk['total_revenue'], 2) }} €</div>
                         </div>
                     </div>
                 </div>
             @endforeach
         </div>
 
-        <!-- Детайлен списък -->
+        <!-- Детайлен списък (с пагинация) -->
         <div class="bg-white rounded-lg shadow overflow-hidden">
             <div class="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
                 <h2 class="text-lg font-semibold">Детайлен списък на продажбите</h2>
                 <div class="text-sm text-gray-500">
-                    {{ $report->count() }} записа
+                    <i class="fas fa-list mr-1"></i> {{ $report->total() }} записа 
+                    (страница {{ $report->currentPage() }} от {{ $report->lastPage() }})
                 </div>
             </div>
             <div class="overflow-x-auto">
@@ -131,8 +130,7 @@
                                 <td class="px-6 py-4 text-right">{{ number_format($item['quantity'], 3) }}
                                     {{ $item['unit'] }}</td>
                                 <td class="px-6 py-4 text-right">{{ number_format($item['unit_price'], 2) }} €</td>
-                                <td class="px-6 py-4 text-right font-bold">{{ number_format($item['total_price'], 2) }} €
-                                </td>
+                                <td class="px-6 py-4 text-right font-bold">{{ number_format($item['total_price'], 2) }} €</td>
                             </tr>
                         @empty
                             <tr>
@@ -144,15 +142,32 @@
                         @endforelse
                     </tbody>
                     <tfoot class="bg-gray-50">
-                        <tr>
-                            <td colspan="6" class="px-6 py-3 text-right font-bold">Общо:</td>
+                        <tr class="border-t">
+                            <td colspan="6" class="px-6 py-3 text-right font-semibold text-gray-600">
+                                Общо за текущата страница:
+                            </td>
                             <td class="px-6 py-3 text-right font-bold text-indigo-600">
-                                {{ number_format($report->sum('total_price'), 2) }} €
+                                {{ number_format(collect($report->items())->sum('total_price'), 2) }} €
+                            </td>
+                        </tr>
+                        <tr class="bg-gray-100 font-bold">
+                            <td colspan="6" class="px-6 py-3 text-right text-lg">
+                                ОБЩО ЗА ПЕРИОДА ({{ $startDate->format('d.m.Y') }} - {{ $endDate->format('d.m.Y') }}):
+                            </td>
+                            <td class="px-6 py-3 text-right text-lg text-indigo-700">
+                                {{ number_format($totalRevenue, 2) }} €
                             </td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
+
+            <!-- Пагинация -->
+            @if ($report->hasPages())
+                <div class="px-6 py-4 border-t bg-gray-50">
+                    {{ $report->appends(request()->query())->links() }}
+                </div>
+            @endif
         </div>
     </div>
 @endsection
