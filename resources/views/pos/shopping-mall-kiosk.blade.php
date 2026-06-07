@@ -353,11 +353,11 @@
                                     <div class="text-right">
                                         <div class="font-semibold">${parseFloat(item.total_price).toFixed(2)} €</div>
                                         ${item.kiosk_id == currentKioskId ? `
-                                                <div class="flex gap-1 mt-2">
-                                                    <button onclick="editItemQuantity(${item.id})" class="text-blue-500 text-sm">✏️</button>
-                                                    <button onclick="removeItem(${item.id})" class="text-red-500 text-sm">🗑️</button>
-                                                </div>
-                                                ` : ''}
+                                                    <div class="flex gap-1 mt-2">
+                                                        <button onclick="editItemQuantity(${item.id})" class="text-blue-500 text-sm">✏️</button>
+                                                        <button onclick="removeItem(${item.id})" class="text-red-500 text-sm">🗑️</button>
+                                                    </div>
+                                                    ` : ''}
                                     </div>
                                 </div>
                             </div>
@@ -434,7 +434,7 @@
             if (quantity > selectedProductData.availableQty) {
                 alert(
                     `Няма достатъчна наличност! Максимално: ${selectedProductData.availableQty} ${selectedProductData.unit}`
-                    );
+                );
                 return;
             }
             $.ajax({
@@ -494,7 +494,7 @@
             $('#createSessionModal').addClass('hidden');
         }
 
-                function createSession() {
+        function createSession() {
             const customerName = $('#customerName').val().trim();
             const customerPhone = $('#customerPhone').val().trim();
             const note = $('#sessionNote').val().trim();
@@ -507,15 +507,15 @@
             }, function(res) {
                 if (res.success) {
                     closeCreateSessionModal();
-                    
+
                     // Ако контролерът връща session_token
                     if (res.session && res.session.session_token) {
                         const newToken = res.session.session_token;
                         currentSessionToken = newToken;
-                        
+
                         // Автоматично избираме новата сметка
                         selectSession(newToken);
-                        
+
                         // Опресняваме списъка
                         refreshSessionsList();
                     } else {
@@ -556,6 +556,18 @@
 
         function closeNoteModal() {
             $('#noteModal').addClass('hidden');
+        }
+
+        function openNoteModal() {
+            if (!currentSessionData || !currentSessionData.id) {
+                alert('Моля, първо изберете сметка!');
+                return;
+            }
+            $('#noteText').val(currentSessionData.note || '');
+            $('#noteModal').removeClass('hidden');
+            setTimeout(() => {
+                $('#noteText').focus();
+            }, 100);
         }
 
         function saveNote() {
